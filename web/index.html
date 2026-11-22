@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hamster Shooter — Multiplayer Online</title>
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+    body {
+      margin: 0;
+      background: #0e1526;
+      color: #fff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #wrap {
+      position: relative;
+      width: min(100vw, 1200px);
+      aspect-ratio: 1200 / 720;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #ffd43b;
+      background: #141b2d;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(12, 18, 34, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .hidden { display: none !important; }
+    .card {
+      background: #1a2033;
+      border: 2px solid #ffd43b;
+      border-radius: 16px;
+      padding: 24px 30px;
+      width: min(92%, 640px);
+      text-align: center;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+    }
+    h1 { margin: 0 0 6px; color: #ffd43b; font-size: 36px; letter-spacing: 1px; }
+    .sub { color: #cfe0ff; margin: 0 0 18px; font-size: 15px; }
+    .row { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+    input[type="text"] {
+      background: #273152;
+      border: 2px solid #6b7aa8;
+      border-radius: 10px;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: #ffd43b; }
+    button {
+      border: 2px solid #fff;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      transition: transform 0.08s;
+    }
+    button:active { transform: scale(0.96); }
+    .btn-green { background: #37b24d; }
+    .btn-blue { background: #228be6; }
+    .btn-gold { background: #e69d1a; }
+    .btn-red { background: #c92a2a; }
+    .btn-dark { background: #364166; border-color: #ffd43b; }
+    .controls {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #b9cae8;
+      line-height: 1.55;
+    }
+    #roomBar {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 26, 44, 0.9);
+      border: 2px solid #ffd43b;
+      border-radius: 10px;
+      padding: 5px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 700;
+      z-index: 5;
+    }
+    #roomCodeBadge { color: #ffd43b; font-size: 17px; letter-spacing: 2px; }
+    #copyInviteBtn { padding: 4px 10px; font-size: 13px; }
+    #shopBtnTop { padding: 4px 10px; font-size: 13px; }
+    #shopModal .card { width: min(94%, 820px); max-height: 92%; overflow-y: auto; padding: 18px 22px; }
+    .tabs { display: flex; gap: 10px; justify-content: center; margin: 10px 0 14px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 10px;
+      text-align: center;
+    }
+    .item {
+      background: #252e4a;
+      border: 2px solid #55628a;
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .item.active { border-color: #ffd43b; }
+    .item h4 { margin: 0; font-size: 15px; }
+    .item p { margin: 0; font-size: 12px; color: #c1cfe8; }
+    .swatch {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      margin: 2px auto;
+      border: 3px solid #fff;
+    }
+    #statusMsg { color: #ff8787; font-size: 14px; min-height: 20px; margin-top: 6px; }
+    label.chk { font-size: 14px; color: #dbe7ff; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="1200" height="720"></canvas>
+
+    <!-- Górny pasek z kodem pokoju i przyciskiem kopiowania linku zaproszenia -->
+    <div id="roomBar" class="hidden">
+      <span>POKÓJ: <b id="roomCodeBadge">----</b></span>
+      <button id="copyInviteBtn" class="btn-blue">Kopiuj link zaproszenia</button>
+      <button id="shopBtnTop" class="btn-gold">Sklep [B]</button>
+    </div>
+
+    <!-- Lobby Startowe -->
+    <div id="lobby" class="overlay">
+      <div class="card">
+        <h1>HAMSTER SHOOTER</h1>
+        <p class="sub">Multiplayer Online — Walka o Ziarna Słonecznika!</p>
+
+        <div class="row">
+          <input id="nickInput" type="text" maxlength="14" placeholder="Twój nick..." value="Chomik" />
+        </div>
+
+        <div class="row">
+          <label class="chk">
+            <input id="withBotsChk" type="checkbox" checked />
+            Dodaj 3 boty do nowego pokoju
+          </label>
+        </div>
+
+        <div class="row">
+          <button id="createRoomBtn" class="btn-green">STWÓRZ POKÓJ I ZAPROŚ</button>
+        </div>
+
+        <div class="row">
+          <input id="roomInput" type="text" maxlength="6" placeholder="KOD (np. K7M2)" style="width: 190px; text-transform: uppercase;" />
+          <button id="joinRoomBtn" class="btn-blue">DOŁĄCZ DO KOLEGI</button>
+        </div>
+
+        <div id="statusMsg"></div>
+
+        <div class="controls">
+          <b>Sterowanie:</b> A / D (bieg) • W / Spacja (skok i <b>podwójny skok</b>) • Myszka + LPM (celowanie i strzał)<br />
+          1–4 / Kółko: <b>Ziarna, Karabin, Shotgun, AWP</b> • <b>B</b>: Sklep (22 skórki zostają na stałe!) • <b>M</b>: Dźwięk<br />
+          Wskakuj głową w złote bloki <b>?</b> jak w Mario!
+        </div>
+      </div>
+    </div>
+
+    <!-- Sklep w przeglądarce -->
+    <div id="shopModal" class="overlay hidden">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin: 0;">
+          <h2 style="margin: 0; color: #ffd43b;">SKLEP CHOMIKA</h2>
+          <div style="font-weight: 700; color: #ffd43b; font-size: 18px;">Ziarna: <span id="shopSeeds">0</span></div>
+          <button id="closeShopBtn" class="btn-red">ZAMKNIJ [B]</button>
+        </div>
+        <div class="tabs">
+          <button class="btn-dark" data-tab="weapons">BRONIE (na rundę)</button>
+          <button class="btn-dark" data-tab="skins">22 SKÓRKI (na stałe!)</button>
+        </div>
+        <div id="shopGrid" class="grid"></div>
+        <p id="shopMsg" style="color: #ffd43b; font-size: 14px; margin: 10px 0 0;"></p>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const SCREEN_W = 1200, SCREEN_H = 720, TILE = 40;
+  const MAP_COLS = 40, MAP_ROWS = 22, WORLD_W = MAP_COLS * TILE, WORLD_H = MAP_ROWS * TILE;
+  const GRAVITY = 1550, MAX_FALL = 900, SPEED = 320, JUMP = 610, DJUMP = 560, SPRING_JUMP = 860;
+
+  const LAYOUT = [
+    "########################################",
+    "#                                      #",
+    "#                                      #",
+    "#      B?B            B?B        B?B   #",
+    "#                                      #",
+    "#  BBBB      BBBBB           BBBBB     #",
+    "#                  E             E     #",
+    "#        E               BBBB          #",
+    "#   BBBBBB     B?B              BBBBBB #",
+    "#                                      #",
+    "#             BBBBBBB                  #",
+    "#   E                         E        #",
+    "# BBBB   ?              ?        BBBB  #",
+    "#           PP      PP                 #",
+    "#     BBBB  PP  B?B PP  BBBB           #",
+    "#           PP      PP         E       #",
+    "#  1             2            BBBBBB   #",
+    "# BBBBBB   ^    BBB    ^               #",
+    "#        BBBB        BBBB   PP   3   E #",
+    "#    S                      PP  BBBBBB #",
+    "########################################",
+    "########################################",
+  ];
+
+  const WEAPONS = {
+    ziarna:  { name: "Miotacz Ziaren", key: "1", cost: 0,  dmg: 18, cd: 0.24, speed: 700, pellets: 1, spread: 3.5, recoil: 35,  color: "#f5d76e", desc: "Strzela łupinkami słonecznika." },
+    karabin: { name: "Karabin AR",     key: "2", cost: 14, dmg: 14, cd: 0.11, speed: 860, pellets: 1, spread: 5.5, recoil: 45,  color: "#ffaf3c", desc: "Szybkostrzelny karabin (na rundę)." },
+    shotgun: { name: "Shotgun",        key: "3", cost: 22, dmg: 13, cd: 0.68, speed: 740, pellets: 6, spread: 22,  recoil: 170, color: "#ff6e32", desc: "6 śrucin naraz! (na rundę)." },
+    awp:     { name: "Snajperka AWP",  key: "4", cost: 35, dmg: 88, cd: 1.15, speed: 1500, pellets: 1, spread: 0,  recoil: 220, color: "#ff4646", desc: "Laser i potężny pocisk (na rundę)." },
+  };
+  const WEAPON_ORDER = ["ziarna", "karabin", "shotgun", "awp"];
+
+  const SKINS = {
+    klasyczny:    { name: "Klasyczny",     cost: 0,  body: "#d79655", belly: "#fae8c8", accent: "#b47337", desc: "Złocisty chomik startowy." },
+    ninja:        { name: "Chomik Ninja",  cost: 12, body: "#373a46", belly: "#5f6473", accent: "#e12d37", desc: "Czarne futerko + czerwona opaska." },
+    pirat:        { name: "Chomik Pirat",  cost: 14, body: "#b97341", belly: "#f0d7b4", accent: "#23232a", desc: "Kapelusz pirata i opaska." },
+    szef_kuchni:  { name: "Kucharz",       cost: 14, body: "#ebc391", belly: "#fff8eb", accent: "#ffffff", desc: "Wysoka biała czapka kucharza." },
+    kowboj:       { name: "Kowboj",        cost: 15, body: "#c68448", belly: "#f5e0be", accent: "#d73030", desc: "Kapelusz i czerwona chustka." },
+    czarodziej:   { name: "Czarodziej",    cost: 16, body: "#7d69c3", belly: "#d2c8f5", accent: "#ffd741", desc: "Magiczna czapka z gwiazdkami." },
+    panda:        { name: "Chomik Panda",  cost: 16, body: "#f5f5f8", belly: "#ffffff", accent: "#202228", desc: "Urocze czarne łatki pandy." },
+    rycerz:       { name: "Rycerz",        cost: 18, body: "#b9c3d2", belly: "#e6ebf2", accent: "#dc323c", desc: "Stalowy hełm i pióropusz." },
+    zombie:       { name: "Zombie",        cost: 18, body: "#84a85f", belly: "#afcd87", accent: "#b9374b", desc: "Oliwkowy łowca ziaren." },
+    astronauta:   { name: "Astronauta",    cost: 20, body: "#ebf0f8", belly: "#fcfeff", accent: "#4bb9ff", desc: "Kosmiczny szklany hełm." },
+    wiking:       { name: "Wiking",        cost: 20, body: "#d4803e", belly: "#f8dcb9", accent: "#a5afbe", desc: "Rogaty hełm z Północy." },
+    kosmita:      { name: "Kosmita",       cost: 22, body: "#69dc6e", belly: "#b9faaf", accent: "#fff05a", desc: "Zielony przybysz z czułkami." },
+    duch:         { name: "Chomik Duch",   cost: 22, body: "#c3e8ff", belly: "#ebf8ff", accent: "#ffeb5f", desc: "Świecące oczy duszka." },
+    samuraj:      { name: "Samuraj",       cost: 24, body: "#555866", belly: "#9ba0af", accent: "#d72d32", desc: "Hełm Kabuto ze złotym herbem." },
+    wampir:       { name: "Wampir",        cost: 24, body: "#bcbccd", belly: "#e6e6f2", accent: "#b9192d", desc: "Peleryna i ostre kiełki." },
+    robot:        { name: "Robo-Chomik",   cost: 26, body: "#919eaf", belly: "#c3d0de", accent: "#ff4b41", desc: "Antenka i cyfrowe oczy." },
+    cyber:        { name: "Cyber-Chomik",  cost: 28, body: "#324b82", belly: "#6996d7", accent: "#32f5ff", desc: "Neonowy wizjer przyszłości." },
+    ogien:        { name: "Chomik Ognia",  cost: 30, body: "#eb5f26", belly: "#ffc34b", accent: "#ffe641", desc: "Płonąca grzywa ognia." },
+    lod:          { name: "Chomik Lodu",   cost: 30, body: "#73cdf5", belly: "#d7f8ff", accent: "#ebfcff", desc: "Korona z kryształów lodu." },
+    superbohater: { name: "Super-Chomik",  cost: 32, body: "#417de1", belly: "#87b9fa", accent: "#e62d37", desc: "Maska, peleryna i gwiazda." },
+    krol:         { name: "Król Ziaren",   cost: 36, body: "#f5c864", belly: "#fff5d2", accent: "#d22341", desc: "Złota korona władcy areny!" },
+    diament:      { name: "Diamentowy",    cost: 45, body: "#41e6e1", belly: "#c3fffc", accent: "#ffffff", desc: "Najrzadsza kryształowa skórka!" },
+  };
+  const SKIN_ORDER = Object.keys(SKINS);
+
+  // --- Prosty WebAudio syntezator dźwięków retro ---
+  let audioCtx = null;
+  let soundOn = true;
+  function beep(freqStart, freqEnd, dur, type = "square", vol = 0.08) {
+    if (!soundOn) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freqStart, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(freqEnd, audioCtx.currentTime + dur);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    } catch {}
+  }
+
+  // --- Zapis skórek i nicku w localStorage (bronie są na 1 rundę!) ---
+  function loadLocalSave() {
+    try {
+      const s = JSON.parse(localStorage.getItem("hamster_mp_save") || "{}");
+      const owned = Array.isArray(s.owned_skins) ? s.owned_skins.filter(k => SKINS[k]) : ["klasyczny"];
+      if (!owned.includes("klasyczny")) owned.unshift("klasyczny");
+      return {
+        nick: (s.nick || "Chomik").slice(0, 14),
+        skin_id: SKINS[s.skin_id] ? s.skin_id : "klasyczny",
+        owned_skins: new Set(owned),
+        seeds: Number.isFinite(s.seeds) ? Math.max(0, Math.floor(s.seeds)) : 0,
+      };
+    } catch {
+      return { nick: "Chomik", skin_id: "klasyczny", owned_skins: new Set(["klasyczny"]), seeds: 0 };
+    }
+  }
+  function writeLocalSave() {
+    try {
+      localStorage.setItem("hamster_mp_save", JSON.stringify({
+        nick: me.name,
+        skin_id: me.skin_id,
+        owned_skins: Array.from(me.owned_skins),
+        seeds: me.seeds,
+      }));
+    } catch {}
+  }
+
+  // --- Parsowanie mapy ---
+  const solids = [], springs = [];
+  for (let r = 0; r < MAP_ROWS; r++) {
+    for (let c = 0; c < MAP_COLS; c++) {
+      const ch = LAYOUT[r][c];
+      if (ch === "#" || ch === "B" || ch === "?" || ch === "P") {
+        solids.push({ x: c * TILE, y: r * TILE, w: TILE, h: TILE, ch, c, r });
+      } else if (ch === "^") {
+        springs.push({ x: c * TILE + 4, y: r * TILE + 18, w: TILE - 8, h: 22 });
+      }
+    }
+  }
+  function pointHitsSolid(x, y) {
+    if (x < TILE || x > WORLD_W - TILE || y < TILE || y > WORLD_H - TILE * 2) return true;
+    const c = Math.floor(x / TILE), r = Math.floor(y / TILE);
+    if (r >= 0 && r < MAP_ROWS && c >= 0 && c < MAP_COLS) {
+      const ch = LAYOUT[r][c];
+      return ch === "#" || ch === "B" || ch === "?" || ch === "P";
+    }
+    return true;
+  }
+
+  // --- Stan gry i sieci ---
+  const saved = loadLocalSave();
+  const me = {
+    id: null,
+    name: saved.nick,
+    x: 220, y: WORLD_H - 120, vx: 0, vy: 0, w: 32, h: 34,
+    onGround: false, jumpsLeft: 2,
+    hp: 100, maxHp: 100, alive: true, respawnTimer: 0, invuln: 1.2,
+    skin_id: saved.skin_id, owned_skins: saved.owned_skins,
+    weapon_id: "ziarna", owned_weapons: new Set(["ziarna"]),
+    shootCd: 0, aim: 0, facingRight: true,
+    seeds: saved.seeds, total_seeds: 0, kills: 0,
+    speedTimer: 0, shieldTimer: 0, damageTimer: 0,
+  };
+
+  let ws = null;
+  let roomCode = "";
+  let inGame = false;
+  let shopOpen = false;
+  let shopTab = "weapons";
+  let camX = 0, camY = 0, elapsed = 0;
+  let netSendTimer = 0;
+  let remotePlayers = new Map();
+  let serverSeeds = [];
+  let serverPowerups = [];
+  let blockCooldowns = {};
+  let bullets = [];
+  let particles = [];
+  let notices = [];
+  let keys = {};
+  let mouseX = SCREEN_W / 2, mouseY = SCREEN_H / 2, mouseDown = false;
+
+  // --- Elementy DOM ---
+  const lobbyEl = document.getElementById("lobby");
+  const roomBar = document.getElementById("roomBar");
+  const roomCodeBadge = document.getElementById("roomCodeBadge");
+  const nickInput = document.getElementById("nickInput");
+  const roomInput = document.getElementById("roomInput");
+  const withBotsChk = document.getElementById("withBotsChk");
+  const statusMsg = document.getElementById("statusMsg");
+  const shopModal = document.getElementById("shopModal");
+  const shopGrid = document.getElementById("shopGrid");
+  const shopSeeds = document.getElementById("shopSeeds");
+  const shopMsg = document.getElementById("shopMsg");
+
+  nickInput.value = saved.nick;
+  const urlRoom = new URLSearchParams(window.location.search).get("room");
+  if (urlRoom) roomInput.value = urlRoom.toUpperCase();
+
+  function addNotice(text, color = "#ffd43b") {
+    notices.push({ text, color, ttl: 4.5 });
+    if (notices.length > 5) notices.shift();
+  }
+
+  function connectAndJoin(code) {
+    const nick = nickInput.value.trim().slice(0, 14) || "Chomik";
+    me.name = nick;
+    writeLocalSave();
+    statusMsg.textContent = "Łączenie z serwerem...";
+
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${proto}//${location.host}/ws`;
+    if (ws) try { ws.close(); } catch {}
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: "join",
+        room: code,
+        name: me.name,
+        skin_id: me.skin_id,
+        with_bots: withBotsChk.checked,
+      }));
+    };
+    ws.onerror = () => {
+      statusMsg.textContent = "Nie udało się połączyć z serwerem!";
+    };
+    ws.onclose = () => {
+      if (inGame) {
+        addNotice("Rozłączono z serwerem — odśwież stronę.", "#ff6b6b");
+      }
+    };
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === "welcome") {
+        me.id = msg.player_id;
+        roomCode = msg.room;
+        inGame = true;
+        lobbyEl.classList.add("hidden");
+        roomBar.classList.remove("hidden");
+        roomCodeBadge.textContent = roomCode;
+        history.replaceState(null, "", `?room=${roomCode}`);
+        applySnapshot(msg);
+        addNotice(`Dołączono do pokoju ${roomCode}! Wyślij link kolegom!`, "#69db7c");
+        beep(520, 880, 0.14, "triangle");
+      } else if (msg.type === "snapshot") {
+        applySnapshot(msg);
+      } else if (msg.type === "shoot") {
+        spawnWeaponBullets(msg.x, msg.y, msg.angle, msg.weapon_id, msg.owner_id, msg.owner_name || "Gracz", msg.damage_mult || 1.0, false);
+      } else if (msg.type === "damaged" && msg.target_id === me.id) {
+        takeLocalDamage(msg.damage, msg.attacker_id, msg.attacker_name || "Wróg");
+      } else if (msg.type === "kill_credit") {
+        me.kills += 1;
+        addNotice(`Pokonałeś ${msg.victim_name}!`, "#ffd43b");
+        beep(440, 880, 0.18, "square");
+      } else if (msg.type === "seed_awarded") {
+        me.seeds += msg.value;
+        me.total_seeds += msg.value;
+        writeLocalSave();
+        beep(980, 1320, 0.09, "square", 0.06);
+      } else if (msg.type === "powerup_awarded") {
+        applyPowerup(msg.kind);
+      } else if (msg.type === "block_bumped") {
+        beep(520, 260, 0.1, "square", 0.07);
+      } else if (msg.type === "notice") {
+        addNotice(msg.text);
+      }
+    };
+  }
+
+  function applySnapshot(msg) {
+    serverSeeds = msg.seeds || [];
+    serverPowerups = msg.powerups || [];
+    blockCooldowns = msg.blocks || {};
+    const seen = new Set();
+    for (const p of (msg.players || [])) {
+      if (p.id === me.id) continue;
+      seen.add(p.id);
+      const prev = remotePlayers.get(p.id);
+      if (prev) {
+        prev.tx = p.x; prev.ty = p.y;
+        Object.assign(prev, p, { x: prev.x, y: prev.y, tx: p.x, ty: p.y });
+      } else {
+        remotePlayers.set(p.id, { ...p, tx: p.x, ty: p.y });
+      }
+    }
+    for (const id of Array.from(remotePlayers.keys())) {
+      if (!seen.has(id)) remotePlayers.delete(id);
+    }
+  }
+
+  document.getElementById("createRoomBtn").onclick = () => connectAndJoin("");
+  document.getElementById("joinRoomBtn").onclick = () => connectAndJoin(roomInput.value.trim());
+  document.getElementById("copyInviteBtn").onclick = async () => {
+    const url = `${location.origin}/?room=${roomCode}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      addNotice(`Skopiowano link: ${url}`, "#69db7c");
+    } catch {
+      prompt("Skopiuj link zaproszenia dla kolegów:", url);
+    }
+  };
+
+  // --- Sklep ---
+  function openShop(open) {
+    shopOpen = open;
+    shopModal.classList.toggle("hidden", !open);
+    if (open) renderShop();
+  }
+  document.getElementById("shopBtnTop").onclick = () => openShop(!shopOpen);
+  document.getElementById("closeShopBtn").onclick = () => openShop(false);
+  document.querySelectorAll("[data-tab]").forEach(btn => {
+    btn.onclick = () => { shopTab = btn.dataset.tab; renderShop(); };
+  });
+
+  function renderShop() {
+    shopSeeds.textContent = me.seeds;
+    shopGrid.innerHTML = "";
+    if (shopTab === "weapons") {
+      for (const wid of WEAPON_ORDER) {
+        const w = WEAPONS[wid];
+        const owned = me.owned_weapons.has(wid);
+        const eq = me.weapon_id === wid;
+        const div = document.createElement("div");
+        div.className = "item" + (eq ? " active" : "");
+        div.innerHTML = `<h4>[${w.key}] ${w.name}</h4><p>${w.desc}</p><p style="color:#8ce99a">Obrażenia: ${w.dmg}×${w.pellets}</p>`;
+        const b = document.createElement("button");
+        b.className = eq ? "btn-green" : (owned ? "btn-blue" : "btn-gold");
+        b.textContent = eq ? "WYBRANA" : (owned ? "WYBIERZ" : `KUP (${w.cost} z.)`);
+        b.onclick = () => {
+          if (owned) { me.weapon_id = wid; shopMsg.textContent = `Wybrano ${w.name}`; }
+          else if (me.seeds >= w.cost) {
+            me.seeds -= w.cost; me.owned_weapons.add(wid); me.weapon_id = wid;
+            writeLocalSave(); beep(660, 1180, 0.14);
+            shopMsg.textContent = `Kupiono ${w.name} (na tę rundę)!`;
+          } else { shopMsg.textContent = `Za mało ziaren (potrzeba ${w.cost})!`; beep(170, 110, 0.14); }
+          renderShop();
+        };
+        div.appendChild(b);
+        shopGrid.appendChild(div);
+      }
+    } else {
+      for (const sid of SKIN_ORDER) {
+        const s = SKINS[sid];
+        const owned = me.owned_skins.has(sid);
+        const eq = me.skin_id === sid;
+        const div = document.createElement("div");
+        div.className = "item" + (eq ? " active" : "");
+        div.innerHTML = `<div class="swatch" style="background:${s.body}; border-color:${s.accent}"></div><h4>${s.name}</h4><p>${s.desc}</p>`;
+        const b = document.createElement("button");
+        b.className = eq ? "btn-green" : (owned ? "btn-blue" : "btn-gold");
+        b.textContent = eq ? "ZAŁOŻONA" : (owned ? "ZAŁÓŻ" : `KUP (${s.cost} z.)`);
+        b.onclick = () => {
+          if (owned) { me.skin_id = sid; writeLocalSave(); shopMsg.textContent = `Założono skórkę: ${s.name}!`; }
+          else if (me.seeds >= s.cost) {
+            me.seeds -= s.cost; me.owned_skins.add(sid); me.skin_id = sid;
+            writeLocalSave(); beep(660, 1180, 0.14);
+            shopMsg.textContent = `Kupiono skórkę ${s.name} (zostaje na stałe)!`;
+          } else { shopMsg.textContent = `Za mało ziaren (potrzeba ${s.cost})!`; beep(170, 110, 0.14); }
+          renderShop();
+        };
+        div.appendChild(b);
+        shopGrid.appendChild(div);
+      }
+    }
+  }
+
+  // --- Sterowanie ---
+  window.addEventListener("keydown", (e) => {
+    if (!inGame) return;
+    const k = e.key.toLowerCase();
+    if (k === "b" || k === "tab") { e.preventDefault(); openShop(!shopOpen); return; }
+    if (k === "escape" && shopOpen) { openShop(false); return; }
+    if (k === "m") { soundOn = !soundOn; addNotice(`Dźwięk: ${soundOn ? "ON" : "OFF"}`); return; }
+    if (shopOpen) return;
+
+    if ((k === "w" || k === " " || e.key === "ArrowUp") && !keys[k]) {
+      e.preventDefault();
+      tryJump();
+    }
+    if (["1", "2", "3", "4"].includes(k)) {
+      const wid = WEAPON_ORDER[Number(k) - 1];
+      if (me.owned_weapons.has(wid)) me.weapon_id = wid;
+      else addNotice("Kup tę broń w Sklepie [B]!");
+    }
+    keys[k] = true;
+  });
+  window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+
+  canvas.addEventListener("mousemove", (e) => {
+    const r = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - r.left) * (SCREEN_W / r.width);
+    mouseY = (e.clientY - r.top) * (SCREEN_H / r.height);
+  });
+  canvas.addEventListener("mousedown", (e) => { if (e.button === 0) mouseDown = true; });
+  window.addEventListener("mouseup", () => { mouseDown = false; });
+  canvas.addEventListener("wheel", (e) => {
+    if (!inGame || shopOpen) return;
+    const owned = WEAPON_ORDER.filter(w => me.owned_weapons.has(w));
+    if (owned.length > 1) {
+      const i = owned.indexOf(me.weapon_id);
+      me.weapon_id = owned[(i + (e.deltaY > 0 ? 1 : owned.length - 1)) % owned.length];
+    }
+  });
+
+  function spawnBurst(x, y, color, count = 8) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const spd = 60 + Math.random() * 140;
+      particles.push({ x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd - 40, color, r: 3 + Math.random() * 3, life: 0.4, max: 0.4 });
+    }
+  }
+
+  function tryJump() {
+    if (!me.alive) return;
+    const mult = me.speedTimer > 0 ? 1.12 : 1.0;
+    if (me.onGround) {
+      me.vy = -JUMP * mult;
+      me.onGround = false;
+      me.jumpsLeft = 1;
+      beep(280, 620, 0.12, "square", 0.06);
+      spawnBurst(me.x, me.y + 16, "#eee", 5);
+    } else if (me.jumpsLeft > 0) {
+      me.vy = -DJUMP * mult;
+      me.jumpsLeft -= 1;
+      beep(440, 880, 0.14, "triangle", 0.08);
+      spawnBurst(me.x, me.y + 16, "#fff", 10);
+    }
+  }
+
+  function applyPowerup(kind) {
+    beep(520, 1040, 0.2, "triangle", 0.09);
+    if (kind === "speed") { me.speedTimer = 8; addNotice("POWER-UP: Turbo Łapki!", "#ffe066"); }
+    else if (kind === "shield") { me.shieldTimer = 10; addNotice("POWER-UP: Tarcza!", "#74c0fc"); }
+    else if (kind === "damage") { me.damageTimer = 8; addNotice("POWER-UP: Mega Strzał 2x!", "#da77f2"); }
+    else if (kind === "heal") { me.hp = Math.min(me.maxHp, me.hp + 50); addNotice("POWER-UP: +50 HP!", "#ff8787"); }
+  }
+
+  function takeLocalDamage(dmg, attackerId, attackerName) {
+    if (!me.alive || me.invuln > 0) return;
+    if (me.shieldTimer > 0) dmg = Math.max(2, Math.floor(dmg * 0.3));
+    me.hp -= dmg;
+    spawnBurst(me.x, me.y, "#ff5555", 6);
+    beep(220, 90, 0.09, "square", 0.08);
+    if (me.hp <= 0) {
+      me.hp = 0; me.alive = false; me.respawnTimer = 2.6;
+      me.seeds = Math.max(0, me.seeds - 3);
+      writeLocalSave();
+      spawnBurst(me.x, me.y, "#ffd43b", 18);
+      addNotice(`Pokonał Cię ${attackerName}! Odradzanie...`, "#ff6b6b");
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: "player_died", x: me.x, y: me.y, killer_id: attackerId, killer_name: attackerName }));
+      }
+    }
+  }
+
+  function spawnWeaponBullets(x, y, angle, wid, ownerId, ownerName, damageMult, sendNet) {
+    const w = WEAPONS[wid] || WEAPONS.ziarna;
+    const spreadRad = (w.spread * Math.PI) / 180;
+    for (let i = 0; i < w.pellets; i++) {
+      const a = angle + (Math.random() * 2 - 1) * spreadRad;
+      bullets.push({
+        x, y, vx: Math.cos(a) * w.speed, vy: Math.sin(a) * w.speed,
+        dmg: Math.round(w.dmg * damageMult), color: w.color, wid,
+        ownerId, ownerName, life: wid === "shotgun" ? 0.55 : 1.5,
+      });
+    }
+    spawnBurst(x, y, w.color, 4);
+    if (sendNet && ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({ type: "shoot", x: Math.round(x), y: Math.round(y), angle: Number(angle.toFixed(3)), weapon_id: wid, damage_mult: damageMult }));
+    }
+  }
+
+  function update(dt) {
+    elapsed += dt;
+    notices.forEach(n => n.ttl -= dt);
+    notices = notices.filter(n => n.ttl > 0);
+    if (!inGame) return;
+
+    // Płynna interpolacja kolegów i botów
+    for (const rp of remotePlayers.values()) {
+      rp.x += (rp.tx - rp.x) * Math.min(1, 14 * dt);
+      rp.y += (rp.ty - rp.y) * Math.min(1, 14 * dt);
+    }
+
+    if (me.shootCd > 0) me.shootCd = Math.max(0, me.shootCd - dt);
+    if (me.invuln > 0) me.invuln = Math.max(0, me.invuln - dt);
+    if (me.speedTimer > 0) me.speedTimer = Math.max(0, me.speedTimer - dt);
+    if (me.shieldTimer > 0) me.shieldTimer = Math.max(0, me.shieldTimer - dt);
+    if (me.damageTimer > 0) me.damageTimer = Math.max(0, me.damageTimer - dt);
+
+    if (!me.alive) {
+      me.respawnTimer -= dt;
+      if (me.respawnTimer <= 0) {
+        me.x = 220 + Math.random() * (WORLD_W - 440);
+        me.y = 220;
+        me.vx = 0; me.vy = 0; me.hp = me.maxHp; me.alive = true; me.invuln = 1.6;
+      }
+    } else if (!shopOpen) {
+      let dir = 0;
+      if (keys["a"] || keys["arrowleft"]) dir -= 1;
+      if (keys["d"] || keys["arrowright"]) dir += 1;
+      const spd = SPEED * (me.speedTimer > 0 ? 1.38 : 1.0);
+      me.vx += (dir * spd - me.vx) * Math.min(1, (me.onGround ? 16 : 9) * dt);
+      me.vy = Math.min(MAX_FALL, me.vy + GRAVITY * dt);
+
+      // Kolizje X
+      me.x += me.vx * dt;
+      for (const s of solids) {
+        if (me.x + 16 > s.x && me.x - 16 < s.x + s.w && me.y + 17 > s.y && me.y - 17 < s.y + s.h) {
+          if (me.vx > 0) me.x = s.x - 16;
+          else if (me.vx < 0) me.x = s.x + s.w + 16;
+          me.vx = 0;
+        }
+      }
+      // Kolizje Y
+      me.onGround = false;
+      me.y += me.vy * dt;
+      for (const s of solids) {
+        if (me.x + 16 > s.x && me.x - 16 < s.x + s.w && me.y + 17 > s.y && me.y - 17 < s.y + s.h) {
+          if (me.vy > 0) {
+            me.y = s.y - 17; me.vy = 0; me.onGround = true; me.jumpsLeft = 2;
+          } else if (me.vy < 0) {
+            me.y = s.y + s.h + 17; me.vy = 40;
+            if (s.ch === "?" && ws && ws.readyState === 1) {
+              ws.send(JSON.stringify({ type: "bump_block", col: s.c, row: s.r }));
+            }
+          }
+        }
+      }
+      // Trampoliny
+      for (const sp of springs) {
+        if (me.x + 16 > sp.x && me.x - 16 < sp.x + sp.w && me.y + 17 > sp.y && me.y - 17 < sp.y + sp.h && me.vy >= -40) {
+          me.vy = -SPRING_JUMP; me.onGround = false; me.jumpsLeft = 1;
+          beep(220, 920, 0.22, "square", 0.08);
+          spawnBurst(sp.x + sp.w / 2, sp.y, "#ff8787", 10);
+        }
+      }
+
+      // Celowanie myszką
+      const wmx = mouseX + camX, wmy = mouseY + camY;
+      me.aim = Math.atan2(wmy - me.y, wmx - me.x);
+      me.facingRight = wmx >= me.x;
+
+      // Strzelanie
+      if (mouseDown && me.shootCd <= 0) {
+        const w = WEAPONS[me.weapon_id];
+        me.shootCd = w.cd * (me.damageTimer > 0 ? 0.75 : 1.0);
+        const dmgMult = me.damageTimer > 0 ? 2.0 : 1.0;
+        const dist = me.weapon_id === "awp" ? 36 : 24;
+        const mx = me.x + Math.cos(me.aim) * dist;
+        const my = me.y + Math.sin(me.aim) * dist;
+        spawnWeaponBullets(mx, my, me.aim, me.weapon_id, me.id, me.name, dmgMult, true);
+        me.vx -= Math.cos(me.aim) * w.recoil * 0.4;
+        beep(me.weapon_id === "awp" ? 200 : 480, 90, me.weapon_id === "awp" ? 0.24 : 0.08, "square", 0.08);
+      }
+
+      // Zbieranie ziaren i power-upów (serwer potwierdza!)
+      for (const seed of serverSeeds) {
+        if (Math.hypot(seed.x - me.x, seed.y - me.y) < 28 && !seed._claimed) {
+          seed._claimed = true;
+          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "collect_seed", seed_id: seed.id }));
+        }
+      }
+      for (const pup of serverPowerups) {
+        if (Math.hypot(pup.x - me.x, pup.y - me.y) < 30 && !pup._claimed) {
+          pup._claimed = true;
+          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "collect_powerup", powerup_id: pup.id }));
+        }
+      }
+    }
+
+    // Pociski
+    for (const b of bullets) {
+      b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+      if (b.life <= 0 || pointHitsSolid(b.x, b.y)) {
+        b.dead = true; spawnBurst(b.x, b.y, b.color, 3); continue;
+      }
+      // Trafienia moimi pociskami w kolegów lub boty -> wysyłamy na serwer
+      if (b.ownerId === me.id) {
+        for (const rp of remotePlayers.values()) {
+          if (!rp.alive) continue;
+          if (Math.abs(b.x - rp.x) < 18 && Math.abs(b.y - rp.y) < 19) {
+            b.dead = true;
+            spawnBurst(b.x, b.y, "#ff5555", 6);
+            beep(300, 140, 0.07, "square", 0.06);
+            if (ws && ws.readyState === 1) {
+              ws.send(JSON.stringify({ type: "hit", target_id: rp.id, damage: b.dmg, weapon_id: b.wid }));
+            }
+            break;
+          }
+        }
+      } else if (me.alive && Math.abs(b.x - me.x) < 18 && Math.abs(b.y - me.y) < 19) {
+        // Trafienie pociskiem bota serwerowego
+        b.dead = true;
+        if (String(b.ownerId).startsWith("bot_")) {
+          takeLocalDamage(b.dmg, b.ownerId, b.ownerName);
+        }
+      }
+    }
+    bullets = bullets.filter(b => !b.dead);
+
+    // Cząsteczki
+    for (const pt of particles) { pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 300 * dt; pt.life -= dt; }
+    particles = particles.filter(pt => pt.life > 0);
+
+    // Kamera
+    const tx = Math.max(0, Math.min(WORLD_W - SCREEN_W, me.x - SCREEN_W / 2));
+    const ty = Math.max(0, Math.min(WORLD_H - SCREEN_H, me.y - SCREEN_H / 2));
+    camX += (tx - camX) * Math.min(1, 8 * dt);
+    camY += (ty - camY) * Math.min(1, 8 * dt);
+
+    // Wysyłanie stanu do serwera (20 Hz)
+    netSendTimer -= dt;
+    if (netSendTimer <= 0 && ws && ws.readyState === 1) {
+      netSendTimer = 0.05;
+      ws.send(JSON.stringify({
+        type: "update",
+        name: me.name,
+        x: Math.round(me.x * 10) / 10,
+        y: Math.round(me.y * 10) / 10,
+        vx: Math.round(me.vx),
+        vy: Math.round(me.vy),
+        aim: Number(me.aim.toFixed(3)),
+        facing_right: me.facingRight,
+        skin_id: me.skin_id,
+        weapon_id: me.weapon_id,
+        hp: me.hp,
+        max_hp: me.maxHp,
+        alive: me.alive,
+        seeds: me.seeds,
+        total_seeds: me.total_seeds,
+        kills: me.kills,
+        shield: Number(me.shieldTimer.toFixed(1)),
+        damage_boost: Number(me.damageTimer.toFixed(1)),
+      }));
+    }
+  }
+
+  function drawHamster(p, isMe) {
+    if (!p.alive) return;
+    const cx = p.x - camX, cy = p.y - camY;
+    const skin = SKINS[p.skin_id] || SKINS.klasyczny;
+    const d = p.facing_right === false || p.facingRight === false ? -1 : 1;
+
+    // Laser AWP dla mnie
+    if (isMe && p.weapon_id === "awp") {
+      ctx.strokeStyle = "rgba(255,60,60,0.65)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(p.aim) * 750, cy + Math.sin(p.aim) * 750);
+      ctx.stroke();
+    }
+
+    // Uszka
+    ctx.fillStyle = p.skin_id === "panda" ? "#202228" : skin.body;
+    ctx.strokeStyle = "#281e19"; ctx.lineWidth = 1.5;
+    for (const ex of [cx - 10, cx + 10]) {
+      ctx.beginPath(); ctx.arc(ex, cy - 13, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    // Ciałko
+    ctx.fillStyle = skin.body;
+    ctx.beginPath(); ctx.arc(cx, cy, 17, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = skin.belly;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 7, 10, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = p.skin_id === "diament" ? "#fff" : "#281e19";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 17, 0, Math.PI * 2); ctx.stroke();
+
+    // Oczy + charakterystyczne akcesoria
+    if (p.skin_id === "cyber") {
+      ctx.fillStyle = skin.accent;
+      ctx.fillRect(cx - 10, cy - 7, 20, 6);
+    } else {
+      ctx.fillStyle = p.skin_id === "wampir" ? "#e6232d" : "#181616";
+      ctx.beginPath(); ctx.arc(cx + d * 6, cy - 4, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx - d * 2, cy - 4, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    // Korona / Czapka / Akcent na głowie
+    ctx.fillStyle = skin.accent;
+    if (p.skin_id === "krol" || p.skin_id === "diament" || p.skin_id === "ogien" || p.skin_id === "lod") {
+      ctx.beginPath();
+      ctx.moveTo(cx - 11, cy - 16); ctx.lineTo(cx - 7, cy - 26); ctx.lineTo(cx, cy - 20);
+      ctx.lineTo(cx + 7, cy - 26); ctx.lineTo(cx + 11, cy - 16); ctx.closePath();
+      ctx.fill();
+    } else if (p.skin_id !== "klasyczny" && p.skin_id !== "panda") {
+      ctx.fillRect(cx - 14, cy - 15, 28, 5);
+    }
+
+    // Broń
+    const ang = p.aim || 0;
+    const len = p.weapon_id === "awp" ? 34 : (p.weapon_id === "karabin" ? 26 : 22);
+    ctx.strokeStyle = p.weapon_id === "awp" ? "#3c7341" : (p.weapon_id === "ziarna" ? "#d4a238" : "#444a57");
+    ctx.lineWidth = p.weapon_id === "shotgun" ? 7 : 5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
+    ctx.stroke();
+
+    // Tarcza
+    if ((p.shield || p.shieldTimer || 0) > 0) {
+      ctx.strokeStyle = "#5ad2ff"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(cx, cy, 24, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Pasek HP + Nick
+    const ratio = Math.max(0, (p.hp || 0) / (p.max_hp || p.maxHp || 100));
+    ctx.fillStyle = "#1d1d24"; ctx.fillRect(cx - 20, cy - 32, 40, 6);
+    ctx.fillStyle = isMe ? "#40c057" : "#fa5252"; ctx.fillRect(cx - 19, cy - 31, 38 * ratio, 4);
+    ctx.font = "bold 13px Segoe UI"; ctx.textAlign = "center";
+    ctx.fillStyle = "#111"; ctx.fillText(p.name, cx + 1, cy - 36);
+    ctx.fillStyle = isMe ? "#ffd43b" : "#fff"; ctx.fillText(p.name, cx, cy - 37);
+  }
+
+  function draw() {
+    // Niebo gradientowe Mario
+    const grad = ctx.createLinearGradient(0, 0, 0, SCREEN_H);
+    grad.addColorStop(0, "#64b9ff"); grad.addColorStop(1, "#b4e6ff");
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+
+    // Chmurki i wzgórza
+    ctx.fillStyle = "#62c46d";
+    for (const [hx, hw, hh] of [[240, 220, 170], [680, 280, 220], [1180, 240, 180]]) {
+      ctx.beginPath(); ctx.ellipse(hx - camX, 800 - camY, hw, hh, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    for (const [cx, cy] of [[220, 150], [580, 120], [950, 170], [1340, 135]]) {
+      ctx.beginPath(); ctx.ellipse(cx - camX, cy - camY, 48, 20, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Kafelki mapy
+    for (const s of solids) {
+      const dx = s.x - camX, dy = s.y - camY;
+      if (dx < -TILE || dx > SCREEN_W || dy < -TILE || dy > SCREEN_H) continue;
+      if (s.ch === "#") {
+        ctx.fillStyle = "#915c34"; ctx.fillRect(dx, dy, TILE, TILE);
+        if (s.r === MAP_ROWS - 2) { ctx.fillStyle = "#44c04a"; ctx.fillRect(dx, dy, TILE, 10); }
+        ctx.strokeStyle = "#6a4122"; ctx.lineWidth = 1; ctx.strokeRect(dx, dy, TILE, TILE);
+      } else if (s.ch === "B") {
+        ctx.fillStyle = "#c66234"; ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.strokeStyle = "#6e3018"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
+      } else if (s.ch === "P") {
+        ctx.fillStyle = "#2eb242"; ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#6ee876"; ctx.fillRect(dx + 5, dy, 8, TILE);
+        ctx.strokeStyle = "#12561e"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
+      } else if (s.ch === "?") {
+        const cd = blockCooldowns[`${s.c},${s.r}`] || 0;
+        ctx.fillStyle = cd > 0 ? "#84705c" : "#f2c02a";
+        ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.strokeStyle = "#8a5a10"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
+        if (cd <= 0) {
+          ctx.fillStyle = "#733e0a"; ctx.font = "bold 24px Segoe UI"; ctx.textAlign = "center";
+          ctx.fillText("?", dx + 20, dy + 29);
+        }
+      }
+    }
+
+    // Grzybki-trampoliny
+    for (const sp of springs) {
+      const dx = sp.x - camX, dy = sp.y - camY;
+      ctx.fillStyle = "#f5e8c8"; ctx.fillRect(dx + sp.w / 2 - 6, dy + 8, 12, sp.h - 8);
+      ctx.fillStyle = "#e83038";
+      ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 7, sp.w / 2 + 4, 8, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Ziarna słonecznika
+    for (const seed of serverSeeds) {
+      const sx = seed.x - camX, sy = seed.y - camY + Math.sin(elapsed * 5 + seed.id) * 3;
+      ctx.fillStyle = "#41372d"; ctx.beginPath(); ctx.ellipse(sx, sy, 6, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#f0e1be"; ctx.beginPath(); ctx.ellipse(sx, sy, 2.5, 7, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Power-upy
+    const pupCols = { speed: "#ffdc32", shield: "#46beff", heal: "#ff556e", damage: "#c85aff" };
+    const pupTxt = { speed: "S", shield: "T", heal: "+", damage: "2x" };
+    for (const pup of serverPowerups) {
+      const px = pup.x - camX, py = pup.y - camY + Math.sin(elapsed * 6 + pup.id) * 4;
+      ctx.fillStyle = pupCols[pup.kind] || "#fff";
+      ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "#111"; ctx.font = "bold 14px Segoe UI"; ctx.textAlign = "center";
+      ctx.fillText(pupTxt[pup.kind] || "?", px, py + 5);
+    }
+
+    // Gracze i boty
+    for (const rp of remotePlayers.values()) drawHamster(rp, false);
+    if (inGame) drawHamster(me, true);
+
+    // Pociski i cząsteczki
+    for (const b of bullets) {
+      ctx.fillStyle = b.color;
+      ctx.beginPath(); ctx.arc(b.x - camX, b.y - camY, b.wid === "awp" ? 5 : 4, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const pt of particles) {
+      ctx.fillStyle = pt.color;
+      ctx.beginPath(); ctx.arc(pt.x - camX, pt.y - camY, Math.max(1, pt.r * (pt.life / pt.max)), 0, Math.PI * 2); ctx.fill();
+    }
+
+    if (!inGame) return;
+
+    // HUD lewy górny róg
+    ctx.fillStyle = "rgba(22, 28, 44, 0.85)";
+    ctx.fillRect(14, 12, 260, 88);
+    ctx.strokeStyle = "#ffd43b"; ctx.lineWidth = 2; ctx.strokeRect(14, 12, 260, 88);
+    ctx.textAlign = "left"; ctx.font = "bold 15px Segoe UI"; ctx.fillStyle = "#fff";
+    ctx.fillText(`${me.name}  —  HP: ${me.hp}/${me.maxHp}`, 24, 34);
+    ctx.fillStyle = "#3a1d24"; ctx.fillRect(24, 42, 240, 14);
+    ctx.fillStyle = "#40c057"; ctx.fillRect(24, 42, 240 * (me.hp / me.maxHp), 14);
+    ctx.fillStyle = "#ffd43b"; ctx.font = "bold 17px Segoe UI";
+    ctx.fillText(`Ziarna: ${me.seeds}   |   Zabójstwa: ${me.kills}`, 24, 82);
+
+    // Ranking pokoju (prawy górny róg)
+    const all = [me, ...Array.from(remotePlayers.values())].sort((a, b) => (b.total_seeds || 0) - (a.total_seeds || 0)).slice(0, 5);
+    const lbH = 30 + all.length * 22;
+    ctx.fillStyle = "rgba(22, 28, 44, 0.82)";
+    ctx.fillRect(SCREEN_W - 224, 12, 210, lbH);
+    ctx.strokeStyle = "#8899bb"; ctx.lineWidth = 2; ctx.strokeRect(SCREEN_W - 224, 12, 210, lbH);
+    ctx.fillStyle = "#ffd43b"; ctx.font = "bold 13px Segoe UI";
+    ctx.fillText(`GRACZE W POKOJU (${remotePlayers.size + 1}):`, SCREEN_W - 214, 30);
+    all.forEach((f, idx) => {
+      ctx.fillStyle = f.id === me.id ? "#ffd43b" : "#fff";
+      ctx.fillText(`${idx + 1}. ${f.name}: ${f.total_seeds || 0} z.`, SCREEN_W - 214, 52 + idx * 22);
+    });
+
+    // Powiadomienia (lewy dół)
+    notices.forEach((n, idx) => {
+      ctx.fillStyle = n.color; ctx.font = "bold 14px Segoe UI"; ctx.textAlign = "left";
+      ctx.fillText(n.text, 18, SCREEN_H - 74 - (notices.length - 1 - idx) * 20);
+    });
+
+    // Pasek broni na dole
+    const slotW = 148, gap = 10, startX = (SCREEN_W - (slotW * 4 + gap * 3)) / 2;
+    WEAPON_ORDER.forEach((wid, i) => {
+      const w = WEAPONS[wid], owned = me.owned_weapons.has(wid), sel = me.weapon_id === wid;
+      const rx = startX + i * (slotW + gap), ry = SCREEN_H - 60;
+      ctx.fillStyle = sel ? "rgba(42, 56, 90, 0.94)" : "rgba(22, 28, 44, 0.8)";
+      ctx.fillRect(rx, ry, slotW, 48);
+      ctx.strokeStyle = sel ? "#ffd43b" : (owned ? "#69db7c" : "#555");
+      ctx.lineWidth = 2; ctx.strokeRect(rx, ry, slotW, 48);
+      ctx.fillStyle = owned ? "#fff" : "#888"; ctx.font = "bold 14px Segoe UI"; ctx.textAlign = "left";
+      ctx.fillText(`[${w.key}] ${w.name.split(" ")[0]}`, rx + 10, ry + 20);
+      ctx.fillStyle = sel ? "#69db7c" : (owned ? "#a5d8ff" : "#ffa94d"); ctx.font = "12px Segoe UI";
+      ctx.fillText(sel ? "Wybrana" : (owned ? "Gotowa" : `Sklep: ${w.cost} z.`), rx + 10, ry + 38);
+    });
+  }
+
+  let lastTs = performance.now();
+  function loop(ts) {
+    const dt = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
