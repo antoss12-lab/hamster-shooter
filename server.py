@@ -68,79 +68,13 @@ for _r in range(MAP_ROWS):
 
 POWERUP_KINDS = ["speed", "shield", "heal", "damage"]
 ROOM_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-MULTI_BOT_PRESETS = [
-    {"name": "Bot-Bąbel", "skin": "pirat", "weapon": "ziarna"},
-    {"name": "Bot-Ninja", "skin": "ninja", "weapon": "karabin"},
-    {"name": "Bot-Wiking", "skin": "wiking", "weapon": "shotgun"},
-]
-
-
-def point_hits_solid(x: float, y: float) -> bool:
-    if x < TILE_SIZE or x > WORLD_W - TILE_SIZE or y < TILE_SIZE or y > WORLD_H - TILE_SIZE * 2:
-        return True
-    col = int(x // TILE_SIZE)
-    row = int(y // TILE_SIZE)
-    if 0 <= row < MAP_ROWS and 0 <= col < MAP_COLS:
-        return LEVEL_LAYOUT[row][col] in ("#", "B", "?", "P")
-    return True
-
-
-class ServerBot:
-    """Prosty serwerowy bot do gry multiplayer (gdy pokój ma włączoną opcję 'z botami')."""
-
-    def __init__(self, bot_id: str, preset: dict, spawn: tuple[int, int]):
-        self.id = bot_id
-        self.name = preset["name"]
-        self.skin_id = preset["skin"]
-        self.weapon_id = preset["weapon"]
-        self.x = float(spawn[0])
-        self.y = float(spawn[1])
-        self.vx = 0.0
-        self.vy = 0.0
-        self.aim = 0.0
-        self.facing_right = True
-        self.hp = 100
-        self.max_hp = 100
-        self.alive = True
-        self.respawn_timer = 0.0
-        self.seeds = 0
-        self.total_seeds = 0
-        self.kills = 0
-        self.dir = random.choice([-1, 1])
-        self.change_timer = random.uniform(0.8, 2.0)
-        self.shoot_timer = random.uniform(0.8, 1.8)
-        self.on_ground = False
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "is_bot": True,
-            "x": round(self.x, 1),
-            "y": round(self.y, 1),
-            "vx": round(self.vx, 1),
-            "vy": round(self.vy, 1),
-            "aim": round(self.aim, 3),
-            "facing_right": self.facing_right,
-            "skin_id": self.skin_id,
-            "weapon_id": self.weapon_id,
-            "hp": self.hp,
-            "max_hp": self.max_hp,
-            "alive": self.alive,
-            "seeds": self.seeds,
-            "total_seeds": self.total_seeds,
-            "kills": self.kills,
-            "shield": 0.0,
-            "damage_boost": 0.0,
-        }
 
 
 class GameRoom:
-    """Pojedynczy pokój multiplayer z własnym 4-znakowym kodem zaproszenia."""
+    """Pojedynczy pokój multiplayer z własnym 4-znakowym kodem zaproszenia (tylko gracze, bez botów)."""
 
-    def __init__(self, code: str, with_bots: bool = True):
+    def __init__(self, code: str):
         self.code = code
-        self.with_bots = with_bots
         self.created_at = time.time()
         self.players: dict[str, dict] = {}
         self.sockets: dict[str, web.WebSocketResponse] = {}
@@ -154,14 +88,6 @@ class GameRoom:
 
         for _ in range(12):
             self.spawn_random_seed()
-
-        # Opcjonalne boty w pokoju (3 boty)
-        self.bots: dict[str, ServerBot] = {}
-        if with_bots:
-            for i, preset in enumerate(MULTI_BOT_PRESETS):
-                bid = f"bot_{i+1}"
-                spawn = BOT_SPAWNS[i % len(BOT_SPAWNS)]
-                self.bots[bid] = ServerBot(bid, preset, spawn)
 
     def spawn_random_seed(self):
         if len(self.seeds) >= 18 or not SEED_SPOTS:
@@ -190,12 +116,12 @@ class GameRoom:
         self.powerups[pid] = {"id": pid, "x": round(x, 1), "y": round(y, 1), "kind": kind, "ttl": 20.0}
 
     def build_snapshot(self) -> dict:
-        all_p = list(self.players.values()) + [b.to_dict() for b in self.bots.values()]
+        # W trybie multiplayer w pokoju są wyłącznie prawdziwi gracze (bez botów!)
         active_blocks = {k: round(v, 2) for k, v in self.block_cooldowns.items() if v > 0}
         return {
             "type": "snapshot",
             "room": self.code,
-            "players": all_p,
+            "players": list(self.players.values()),
             "seeds": list(self.seeds.values()),
             "powerups": list(self.powerups.values()),
             "blocks": active_blocks,
@@ -219,7 +145,7 @@ class GameRoom:
         self.sockets.pop(pid, None)
 
     async def step(self, dt: float):
-        # 1. Odświeżanie bloków '?' i pojawianie się ziaren
+        # Odświeżanie bloków '?', pojawianie się ziaren i czas trwania power-upów
         for k in list(self.block_cooldowns.keys()):
             if self.block_cooldowns[k] > 0:
                 self.block_cooldowns[k] = max(0.0, self.block_cooldowns[k] - dt)
@@ -233,92 +159,6 @@ class GameRoom:
             self.powerups[pid]["ttl"] -= dt
             if self.powerups[pid]["ttl"] <= 0:
                 self.powerups.pop(pid, None)
-
-        # 2. Prosta fizyka i AI botów serwerowych
-        if not self.bots:
-            return
-
-        living_players = [p for p in self.players.values() if p.get("alive", True)]
-        for bot in self.bots.values():
-            if not bot.alive:
-                bot.respawn_timer -= dt
-                if bot.respawn_timer <= 0:
-                    sp = random.choice(BOT_SPAWNS)
-                    bot.x, bot.y = float(sp[0]), float(sp[1])
-                    bot.vx, bot.vy = 0.0, 0.0
-                    bot.hp = bot.max_hp
-                    bot.alive = True
-                continue
-
-            bot.change_timer -= dt
-            if bot.change_timer <= 0:
-                bot.change_timer = random.uniform(0.9, 2.2)
-                bot.dir = random.choice([-1, 1])
-
-            bot.vx = bot.dir * 180.0
-            bot.vy = min(850.0, bot.vy + 1450.0 * dt)
-
-            nx = bot.x + bot.vx * dt
-            if point_hits_solid(nx + bot.dir * 16, bot.y):
-                bot.dir *= -1
-                if bot.on_ground:
-                    bot.vy = -560.0
-                    bot.on_ground = False
-            else:
-                bot.x = nx
-
-            ny = bot.y + bot.vy * dt
-            if bot.vy > 0 and point_hits_solid(bot.x, ny + 18):
-                bot.y = (int((ny + 18) // TILE_SIZE) * TILE_SIZE) - 18
-                bot.vy = 0.0
-                bot.on_ground = True
-                if random.random() < 0.012:
-                    bot.vy = -560.0
-                    bot.on_ground = False
-            elif bot.vy < 0 and point_hits_solid(bot.x, ny - 18):
-                bot.vy = 40.0
-            else:
-                bot.y = ny
-                bot.on_ground = False
-
-            # Zbieranie ziaren przez boty
-            for sid, seed in list(self.seeds.items()):
-                if math.hypot(seed["x"] - bot.x, seed["y"] - bot.y) < 28:
-                    self.seeds.pop(sid, None)
-                    bot.seeds += seed["value"]
-                    bot.total_seeds += seed["value"]
-                    break
-
-            # Celowanie i strzelanie do najbliższego gracza
-            target = None
-            best_d = 460.0
-            for p in living_players:
-                d = math.hypot(p["x"] - bot.x, p["y"] - bot.y)
-                if d < best_d:
-                    best_d = d
-                    target = p
-
-            if target is not None:
-                bot.aim = math.atan2(target["y"] - bot.y, target["x"] - bot.x)
-                bot.facing_right = target["x"] >= bot.x
-                bot.shoot_timer -= dt
-                if bot.shoot_timer <= 0:
-                    bot.shoot_timer = random.uniform(1.1, 1.9)
-                    await self.broadcast(
-                        {
-                            "type": "shoot",
-                            "owner_id": bot.id,
-                            "owner_name": bot.name,
-                            "x": round(bot.x + math.cos(bot.aim) * 24, 1),
-                            "y": round(bot.y + math.sin(bot.aim) * 24, 1),
-                            "angle": round(bot.aim + random.uniform(-0.14, 0.14), 3),
-                            "weapon_id": bot.weapon_id,
-                            "damage_mult": 0.55,
-                        }
-                    )
-            else:
-                bot.facing_right = bot.vx >= 0
-                bot.aim = 0.0 if bot.facing_right else math.pi
 
 
 class MultiplayerServer:
@@ -335,12 +175,12 @@ class MultiplayerServer:
                 return code
         return str(random.randint(1000, 9999))
 
-    def get_or_create_room(self, code: str, with_bots: bool = True) -> GameRoom:
+    def get_or_create_room(self, code: str) -> GameRoom:
         clean = "".join(ch for ch in code.upper() if ch.isalnum())[:6]
         if not clean:
             clean = self.generate_code()
         if clean not in self.rooms:
-            self.rooms[clean] = GameRoom(clean, with_bots=with_bots)
+            self.rooms[clean] = GameRoom(clean)
         return self.rooms[clean]
 
     async def tick_loop(self):
@@ -385,11 +225,10 @@ class MultiplayerServer:
 
                 if mtype == "join":
                     req_room = str(data.get("room", "")).strip()
-                    with_bots = bool(data.get("with_bots", True))
                     name = str(data.get("name", "Chomik")).strip()[:14] or "Chomik"
                     skin_id = str(data.get("skin_id", "klasyczny"))
 
-                    room = self.get_or_create_room(req_room, with_bots=with_bots)
+                    room = self.get_or_create_room(req_room)
                     room.sockets[pid] = ws
                     room.players[pid] = {
                         "id": pid,
@@ -463,31 +302,8 @@ class MultiplayerServer:
                     attacker = room.players.get(pid)
                     attacker_name = attacker["name"] if attacker else "Chomik"
 
-                    # Trafienie bota serwerowego
-                    if target_id in room.bots:
-                        bot = room.bots[target_id]
-                        if bot.alive:
-                            bot.hp -= dmg
-                            killed = bot.hp <= 0
-                            if killed:
-                                bot.hp = 0
-                                bot.alive = False
-                                bot.respawn_timer = 3.5
-                                for _ in range(4):
-                                    room.spawn_seed_at(bot.x + random.uniform(-45, 45), bot.y - 12)
-                                await room.broadcast({"type": "notice", "text": f"{attacker_name} pokonał {bot.name}!"})
-                            await room.broadcast(
-                                {
-                                    "type": "damaged",
-                                    "target_id": target_id,
-                                    "attacker_id": pid,
-                                    "attacker_name": attacker_name,
-                                    "damage": dmg,
-                                    "killed": killed,
-                                }
-                            )
                     # Trafienie innego gracza (kolegi w pokoju!)
-                    elif target_id in room.players and target_id != pid:
+                    if target_id in room.players and target_id != pid:
                         target_ws = room.sockets.get(target_id)
                         if target_ws is not None:
                             try:

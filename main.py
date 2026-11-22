@@ -180,7 +180,6 @@ class HamsterGame:
             self.mp_room_input,
             self.player.name,
             self.player.skin_id,
-            with_bots=True,
         )
         if ok:
             self.online_mode = True
@@ -836,18 +835,6 @@ class HamsterGame:
                         break
             elif self.player.alive and self.player.rect.collidepoint(int(b.x), int(b.y)):
                 b.alive = False
-                if str(b.owner).startswith("bot_"):
-                    died = self.player.take_damage(b.damage, None, self.particles, self.texts, self.sounds, [])
-                    if died:
-                        self.net.send_nowait(
-                            {
-                                "type": "player_died",
-                                "x": self.player.rect.centerx,
-                                "y": self.player.rect.centery,
-                                "killer_id": str(b.owner),
-                                "killer_name": getattr(b, "owner_name", "Bot"),
-                            }
-                        )
         self.bullets = [b for b in self.bullets if b.alive]
 
         for pt in self.particles:
@@ -941,7 +928,7 @@ class HamsterGame:
                 if float(rp.get("shield", 0.0)) > 0:
                     pygame.draw.circle(surf, (90, 210, 255), (rx, ry), 25, 3)
                 bar_w = 38
-                bx, by = rx - bar_w // 2, ry - 31
+                bx, by = rx - bar_w // 2, ry - 41
                 pygame.draw.rect(surf, (30, 30, 35), (bx - 1, by - 1, bar_w + 2, 7))
                 ratio = max(0.0, rp.get("hp", 100) / max(1, rp.get("max_hp", 100)))
                 pygame.draw.rect(surf, RED, (bx, by, int(bar_w * ratio), 5))

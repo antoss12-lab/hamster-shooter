@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hamster Shooter — Multiplayer Online</title>
+  <title>Hamster Shooter — Singleplayer & Multiplayer</title>
   <style>
     * { box-sizing: border-box; user-select: none; }
     body {
@@ -28,7 +28,7 @@
       border: 2px solid #ffd43b;
       background: #141b2d;
     }
-    canvas {
+    canvas#game {
       width: 100%;
       height: 100%;
       display: block;
@@ -48,21 +48,41 @@
       background: #1a2033;
       border: 2px solid #ffd43b;
       border-radius: 16px;
-      padding: 24px 30px;
-      width: min(92%, 640px);
+      padding: 20px 26px;
+      width: min(94%, 760px);
       text-align: center;
       box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
     }
-    h1 { margin: 0 0 6px; color: #ffd43b; font-size: 36px; letter-spacing: 1px; }
-    .sub { color: #cfe0ff; margin: 0 0 18px; font-size: 15px; }
-    .row { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+    h1 { margin: 0 0 4px; color: #ffd43b; font-size: 34px; letter-spacing: 1px; }
+    .sub { color: #cfe0ff; margin: 0 0 14px; font-size: 14px; }
+    .row { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .mode-box {
+      background: #232b45;
+      border: 2px solid #4e5e8a;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .mode-box.sp { border-color: #40c057; }
+    .mode-box.mp { border-color: #339af0; }
+    .mode-box h3 { margin: 0; font-size: 18px; }
+    .mode-box p { margin: 0; font-size: 12.5px; color: #bfd0ef; }
     input[type="text"] {
       background: #273152;
       border: 2px solid #6b7aa8;
       border-radius: 10px;
       color: #fff;
-      padding: 10px 14px;
-      font-size: 18px;
+      padding: 8px 12px;
+      font-size: 17px;
       font-weight: 700;
       text-align: center;
       outline: none;
@@ -71,8 +91,8 @@
     button {
       border: 2px solid #fff;
       border-radius: 10px;
-      padding: 10px 18px;
-      font-size: 16px;
+      padding: 9px 15px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
       color: #fff;
@@ -83,37 +103,38 @@
     .btn-blue { background: #228be6; }
     .btn-gold { background: #e69d1a; }
     .btn-red { background: #c92a2a; }
-    .btn-dark { background: #364166; border-color: #ffd43b; }
+    .btn-dark { background: #303a5a; border-color: #6f7fa8; }
+    .diff-btn { padding: 6px 10px; font-size: 13px; border-width: 2px; }
+    .diff-btn.active { border-color: #ffd43b; background: #435484; color: #ffd43b; }
     .controls {
-      margin-top: 14px;
-      font-size: 13px;
+      margin-top: 12px;
+      font-size: 12.5px;
       color: #b9cae8;
-      line-height: 1.55;
+      line-height: 1.5;
     }
-    #roomBar {
+    #topBar {
       position: absolute;
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(20, 26, 44, 0.9);
+      background: rgba(20, 26, 44, 0.92);
       border: 2px solid #ffd43b;
       border-radius: 10px;
       padding: 5px 12px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
       font-size: 14px;
       font-weight: 700;
       z-index: 5;
     }
-    #roomCodeBadge { color: #ffd43b; font-size: 17px; letter-spacing: 2px; }
-    #copyInviteBtn { padding: 4px 10px; font-size: 13px; }
-    #shopBtnTop { padding: 4px 10px; font-size: 13px; }
-    #shopModal .card { width: min(94%, 820px); max-height: 92%; overflow-y: auto; padding: 18px 22px; }
+    #modeBadge { color: #ffd43b; font-size: 15px; letter-spacing: 1px; }
+    #topBar button { padding: 4px 10px; font-size: 12.5px; }
+    #shopModal .card { width: min(94%, 860px); max-height: 92%; overflow-y: auto; padding: 18px 22px; }
     .tabs { display: flex; gap: 10px; justify-content: center; margin: 10px 0 14px; }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
       gap: 10px;
       text-align: center;
     }
@@ -125,65 +146,73 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 6px;
+      align-items: center;
+      gap: 5px;
     }
     .item.active { border-color: #ffd43b; }
-    .item h4 { margin: 0; font-size: 15px; }
-    .item p { margin: 0; font-size: 12px; color: #c1cfe8; }
-    .swatch {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      margin: 2px auto;
-      border: 3px solid #fff;
-    }
-    #statusMsg { color: #ff8787; font-size: 14px; min-height: 20px; margin-top: 6px; }
-    label.chk { font-size: 14px; color: #dbe7ff; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+    .item h4 { margin: 0; font-size: 14.5px; }
+    .item p { margin: 0; font-size: 11.5px; color: #c1cfe8; }
+    .item canvas.preview { width: 78px; height: 78px; display: block; }
+    #statusMsg { color: #ff8787; font-size: 13.5px; min-height: 18px; margin-top: 6px; }
   </style>
 </head>
 <body>
   <div id="wrap">
     <canvas id="game" width="1200" height="720"></canvas>
 
-    <!-- Górny pasek z kodem pokoju i przyciskiem kopiowania linku zaproszenia -->
-    <div id="roomBar" class="hidden">
-      <span>POKÓJ: <b id="roomCodeBadge">----</b></span>
-      <button id="copyInviteBtn" class="btn-blue">Kopiuj link zaproszenia</button>
+    <!-- Górny pasek podczas gry -->
+    <div id="topBar" class="hidden">
+      <span id="modeBadge">SINGLEPLAYER</span>
+      <button id="copyInviteBtn" class="btn-blue hidden">Kopiuj link zaproszenia</button>
       <button id="shopBtnTop" class="btn-gold">Sklep [B]</button>
+      <button id="menuBtnTop" class="btn-red">Menu [ESC]</button>
     </div>
 
-    <!-- Lobby Startowe -->
+    <!-- Menu Główne: Singleplayer (z botami) vs Multiplayer (bez botów) -->
     <div id="lobby" class="overlay">
       <div class="card">
         <h1>HAMSTER SHOOTER</h1>
-        <p class="sub">Multiplayer Online — Walka o Ziarna Słonecznika!</p>
+        <p class="sub">Wielka Bitwa o Ziarna Słonecznika — wybierz tryb gry!</p>
 
-        <div class="row">
-          <input id="nickInput" type="text" maxlength="14" placeholder="Twój nick..." value="Chomik" />
+        <div class="row" style="margin: 6px 0;">
+          <span style="color:#ffd43b; font-weight:700;">TWÓJ NICK:</span>
+          <input id="nickInput" type="text" maxlength="14" placeholder="Twój nick..." value="Chomik" style="width: 220px;" />
         </div>
 
-        <div class="row">
-          <label class="chk">
-            <input id="withBotsChk" type="checkbox" checked />
-            Dodaj 3 boty do nowego pokoju
-          </label>
-        </div>
+        <div class="mode-grid">
+          <!-- Karta SINGLEPLAYER -->
+          <div class="mode-box sp">
+            <div>
+              <h3 style="color:#69db7c;">SINGLEPLAYER (7 BOTÓW)</h3>
+              <p>Walcz z 7 atakującymi botami, zbieraj ziarna i wbij cel 50 ziaren!</p>
+            </div>
+            <div class="row" style="margin: 4px 0; gap: 6px;">
+              <button class="btn-dark diff-btn" data-diff="latwy">Łatwy</button>
+              <button class="btn-dark diff-btn active" data-diff="normalny">Normalny</button>
+              <button class="btn-dark diff-btn" data-diff="trudny">Trudny</button>
+            </div>
+            <button id="startSingleBtn" class="btn-green">GRAJ SINGLEPLAYER</button>
+          </div>
 
-        <div class="row">
-          <button id="createRoomBtn" class="btn-green">STWÓRZ POKÓJ I ZAPROŚ</button>
-        </div>
-
-        <div class="row">
-          <input id="roomInput" type="text" maxlength="6" placeholder="KOD (np. K7M2)" style="width: 190px; text-transform: uppercase;" />
-          <button id="joinRoomBtn" class="btn-blue">DOŁĄCZ DO KOLEGI</button>
+          <!-- Karta MULTIPLAYER -->
+          <div class="mode-box mp">
+            <div>
+              <h3 style="color:#74c0fc;">MULTIPLAYER (BEZ BOTÓW)</h3>
+              <p>Czyste PvP online z kolegami — utwórz pokój i wyślij link albo wpisz kod!</p>
+            </div>
+            <button id="createRoomBtn" class="btn-blue">STWÓRZ POKÓJ I ZAPROŚ</button>
+            <div class="row" style="margin: 0; gap: 6px;">
+              <input id="roomInput" type="text" maxlength="6" placeholder="KOD (np. K7M2)" style="width: 145px; font-size: 14px; padding: 7px; text-transform: uppercase;" />
+              <button id="joinRoomBtn" class="btn-gold" style="padding: 8px 12px; font-size: 14px;">DOŁĄCZ</button>
+            </div>
+          </div>
         </div>
 
         <div id="statusMsg"></div>
 
         <div class="controls">
           <b>Sterowanie:</b> A / D (bieg) • W / Spacja (skok i <b>podwójny skok</b>) • Myszka + LPM (celowanie i strzał)<br />
-          1–4 / Kółko: <b>Ziarna, Karabin, Shotgun, AWP</b> • <b>B</b>: Sklep (22 skórki zostają na stałe!) • <b>M</b>: Dźwięk<br />
-          Wskakuj głową w złote bloki <b>?</b> jak w Mario!
+          1–4 / Kółko: <b>Ziarna, Karabin, Shotgun, AWP</b> • <b>B</b>: Sklep (22 skórki zostają na stałe!) • <b>M</b>: Dźwięk • <b>ESC</b>: Menu
         </div>
       </div>
     </div>
@@ -214,6 +243,7 @@
   const SCREEN_W = 1200, SCREEN_H = 720, TILE = 40;
   const MAP_COLS = 40, MAP_ROWS = 22, WORLD_W = MAP_COLS * TILE, WORLD_H = MAP_ROWS * TILE;
   const GRAVITY = 1550, MAX_FALL = 900, SPEED = 320, JUMP = 610, DJUMP = 560, SPRING_JUMP = 860;
+  const WIN_SEEDS_GOAL = 50;
 
   const LAYOUT = [
     "########################################",
@@ -240,6 +270,12 @@
     "########################################",
   ];
 
+  const DIFFICULTIES = {
+    latwy:    { name: "Łatwy",    botHp: 75,  spd: 0.60, dmg: 0.40, cd: 2.1, spread: 12 },
+    normalny: { name: "Normalny", botHp: 100, spd: 0.72, dmg: 0.65, cd: 1.55, spread: 7 },
+    trudny:   { name: "Trudny",   botHp: 130, spd: 0.88, dmg: 1.00, cd: 1.12, spread: 2.5 },
+  };
+
   const WEAPONS = {
     ziarna:  { name: "Miotacz Ziaren", key: "1", cost: 0,  dmg: 18, cd: 0.24, speed: 700, pellets: 1, spread: 3.5, recoil: 35,  color: "#f5d76e", desc: "Strzela łupinkami słonecznika." },
     karabin: { name: "Karabin AR",     key: "2", cost: 14, dmg: 14, cd: 0.11, speed: 860, pellets: 1, spread: 5.5, recoil: 45,  color: "#ffaf3c", desc: "Szybkostrzelny karabin (na rundę)." },
@@ -249,32 +285,42 @@
   const WEAPON_ORDER = ["ziarna", "karabin", "shotgun", "awp"];
 
   const SKINS = {
-    klasyczny:    { name: "Klasyczny",     cost: 0,  body: "#d79655", belly: "#fae8c8", accent: "#b47337", desc: "Złocisty chomik startowy." },
-    ninja:        { name: "Chomik Ninja",  cost: 12, body: "#373a46", belly: "#5f6473", accent: "#e12d37", desc: "Czarne futerko + czerwona opaska." },
-    pirat:        { name: "Chomik Pirat",  cost: 14, body: "#b97341", belly: "#f0d7b4", accent: "#23232a", desc: "Kapelusz pirata i opaska." },
-    szef_kuchni:  { name: "Kucharz",       cost: 14, body: "#ebc391", belly: "#fff8eb", accent: "#ffffff", desc: "Wysoka biała czapka kucharza." },
-    kowboj:       { name: "Kowboj",        cost: 15, body: "#c68448", belly: "#f5e0be", accent: "#d73030", desc: "Kapelusz i czerwona chustka." },
-    czarodziej:   { name: "Czarodziej",    cost: 16, body: "#7d69c3", belly: "#d2c8f5", accent: "#ffd741", desc: "Magiczna czapka z gwiazdkami." },
-    panda:        { name: "Chomik Panda",  cost: 16, body: "#f5f5f8", belly: "#ffffff", accent: "#202228", desc: "Urocze czarne łatki pandy." },
-    rycerz:       { name: "Rycerz",        cost: 18, body: "#b9c3d2", belly: "#e6ebf2", accent: "#dc323c", desc: "Stalowy hełm i pióropusz." },
-    zombie:       { name: "Zombie",        cost: 18, body: "#84a85f", belly: "#afcd87", accent: "#b9374b", desc: "Oliwkowy łowca ziaren." },
-    astronauta:   { name: "Astronauta",    cost: 20, body: "#ebf0f8", belly: "#fcfeff", accent: "#4bb9ff", desc: "Kosmiczny szklany hełm." },
-    wiking:       { name: "Wiking",        cost: 20, body: "#d4803e", belly: "#f8dcb9", accent: "#a5afbe", desc: "Rogaty hełm z Północy." },
-    kosmita:      { name: "Kosmita",       cost: 22, body: "#69dc6e", belly: "#b9faaf", accent: "#fff05a", desc: "Zielony przybysz z czułkami." },
-    duch:         { name: "Chomik Duch",   cost: 22, body: "#c3e8ff", belly: "#ebf8ff", accent: "#ffeb5f", desc: "Świecące oczy duszka." },
-    samuraj:      { name: "Samuraj",       cost: 24, body: "#555866", belly: "#9ba0af", accent: "#d72d32", desc: "Hełm Kabuto ze złotym herbem." },
-    wampir:       { name: "Wampir",        cost: 24, body: "#bcbccd", belly: "#e6e6f2", accent: "#b9192d", desc: "Peleryna i ostre kiełki." },
-    robot:        { name: "Robo-Chomik",   cost: 26, body: "#919eaf", belly: "#c3d0de", accent: "#ff4b41", desc: "Antenka i cyfrowe oczy." },
-    cyber:        { name: "Cyber-Chomik",  cost: 28, body: "#324b82", belly: "#6996d7", accent: "#32f5ff", desc: "Neonowy wizjer przyszłości." },
-    ogien:        { name: "Chomik Ognia",  cost: 30, body: "#eb5f26", belly: "#ffc34b", accent: "#ffe641", desc: "Płonąca grzywa ognia." },
-    lod:          { name: "Chomik Lodu",   cost: 30, body: "#73cdf5", belly: "#d7f8ff", accent: "#ebfcff", desc: "Korona z kryształów lodu." },
-    superbohater: { name: "Super-Chomik",  cost: 32, body: "#417de1", belly: "#87b9fa", accent: "#e62d37", desc: "Maska, peleryna i gwiazda." },
-    krol:         { name: "Król Ziaren",   cost: 36, body: "#f5c864", belly: "#fff5d2", accent: "#d22341", desc: "Złota korona władcy areny!" },
-    diament:      { name: "Diamentowy",    cost: 45, body: "#41e6e1", belly: "#c3fffc", accent: "#ffffff", desc: "Najrzadsza kryształowa skórka!" },
+    klasyczny:    { name: "Klasyczny",     cost: 0,  body: "#d79655", belly: "#fae8c8", ear: "#f0aaaf", accent: "#b47337", desc: "Złocisty chomik startowy." },
+    ninja:        { name: "Chomik Ninja",  cost: 12, body: "#373a46", belly: "#5f6473", ear: "#4b4e5c", accent: "#e12d37", desc: "Czarne futerko + czerwona opaska." },
+    pirat:        { name: "Chomik Pirat",  cost: 14, body: "#b97341", belly: "#f0d7b4", ear: "#dc9691", accent: "#23232a", desc: "Kapelusz pirata i opaska." },
+    szef_kuchni:  { name: "Kucharz",       cost: 14, body: "#ebc391", belly: "#fff8eb", ear: "#f5b9b9", accent: "#ffffff", desc: "Wysoka biała czapka kucharza." },
+    kowboj:       { name: "Kowboj",        cost: 15, body: "#c68448", belly: "#f5e0be", ear: "#e19b91", accent: "#d73030", desc: "Kapelusz i czerwona chustka." },
+    czarodziej:   { name: "Czarodziej",    cost: 16, body: "#7d69c3", belly: "#d2c8f5", ear: "#a58cdc", accent: "#ffd741", desc: "Magiczna czapka z gwiazdkami." },
+    panda:        { name: "Chomik Panda",  cost: 16, body: "#f5f5f8", belly: "#ffffff", ear: "#202228", accent: "#202228", desc: "Urocze czarne łatki pandy." },
+    rycerz:       { name: "Rycerz",        cost: 18, body: "#b9c3d2", belly: "#e6ebf2", ear: "#96a0af", accent: "#dc323c", desc: "Stalowy hełm i pióropusz." },
+    zombie:       { name: "Zombie",        cost: 18, body: "#84a85f", belly: "#afcd87", ear: "#698a4b", accent: "#b9374b", desc: "Oliwkowy łowca ziaren." },
+    astronauta:   { name: "Astronauta",    cost: 20, body: "#ebf0f8", belly: "#fcfeff", ear: "#d2afb9", accent: "#4bb9ff", desc: "Kosmiczny szklany hełm." },
+    wiking:       { name: "Wiking",        cost: 20, body: "#d4803e", belly: "#f8dcb9", ear: "#e69b87", accent: "#a5afbe", desc: "Rogaty hełm z Północy." },
+    kosmita:      { name: "Kosmita",       cost: 22, body: "#69dc6e", belly: "#b9faaf", ear: "#4bb955", accent: "#fff05a", desc: "Zielony przybysz z czułkami." },
+    duch:         { name: "Chomik Duch",   cost: 22, body: "#c3e8ff", belly: "#ebf8ff", ear: "#9bd2f5", accent: "#ffeb5f", desc: "Świecące oczy duszka." },
+    samuraj:      { name: "Samuraj",       cost: 24, body: "#555866", belly: "#9ba0af", ear: "#6e7080", accent: "#d72d32", desc: "Hełm Kabuto ze złotym herbem." },
+    wampir:       { name: "Wampir",        cost: 24, body: "#bcbccd", belly: "#e6e6f2", ear: "#a096af", accent: "#b9192d", desc: "Peleryna i ostre kiełki." },
+    robot:        { name: "Robo-Chomik",   cost: 26, body: "#919eaf", belly: "#c3d0de", ear: "#6e7a8a", accent: "#ff4b41", desc: "Antenka i cyfrowe oczy." },
+    cyber:        { name: "Cyber-Chomik",  cost: 28, body: "#324b82", belly: "#6996d7", ear: "#283c69", accent: "#32f5ff", desc: "Neonowy wizjer przyszłości." },
+    ogien:        { name: "Chomik Ognia",  cost: 30, body: "#eb5f26", belly: "#ffc34b", ear: "#cd371c", accent: "#ffe641", desc: "Płonąca grzywa ognia." },
+    lod:          { name: "Chomik Lodu",   cost: 30, body: "#73cdf5", belly: "#d7f8ff", ear: "#55afe1", accent: "#ebfcff", desc: "Korona z kryształów lodu." },
+    superbohater: { name: "Super-Chomik",  cost: 32, body: "#417de1", belly: "#87b9fa", ear: "#3264c3", accent: "#e62d37", desc: "Maska, peleryna i gwiazda." },
+    krol:         { name: "Król Ziaren",   cost: 36, body: "#f5c864", belly: "#fff5d2", ear: "#f5b4a5", accent: "#d22341", desc: "Złota korona władcy areny!" },
+    diament:      { name: "Diamentowy",    cost: 45, body: "#41e6e1", belly: "#c3fffc", ear: "#2dc3c8", accent: "#ffffff", desc: "Najrzadsza kryształowa skórka!" },
   };
   const SKIN_ORDER = Object.keys(SKINS);
 
-  // --- Prosty WebAudio syntezator dźwięków retro ---
+  const SP_BOT_PRESETS = [
+    { name: "Bąbel",   skin: "pirat",   weapon: "ziarna" },
+    { name: "Gryzek",  skin: "ninja",   weapon: "ziarna" },
+    { name: "Turbo",   skin: "kosmita", weapon: "karabin" },
+    { name: "Pazur",   skin: "wiking",  weapon: "shotgun" },
+    { name: "Orzech",  skin: "panda",   weapon: "ziarna" },
+    { name: "Błysk",   skin: "cyber",   weapon: "karabin" },
+    { name: "Snajper", skin: "samuraj", weapon: "awp" },
+  ];
+
+  // --- Syntezator dźwięków retro ---
   let audioCtx = null;
   let soundOn = true;
   function beep(freqStart, freqEnd, dur, type = "square", vol = 0.08) {
@@ -295,7 +341,7 @@
     } catch {}
   }
 
-  // --- Zapis skórek i nicku w localStorage (bronie są na 1 rundę!) ---
+  // --- Zapis skórek i nicku (bronie resetują się w nowej rundzie!) ---
   function loadLocalSave() {
     try {
       const s = JSON.parse(localStorage.getItem("hamster_mp_save") || "{}");
@@ -323,7 +369,7 @@
   }
 
   // --- Parsowanie mapy ---
-  const solids = [], springs = [];
+  const solids = [], springs = [], botSpawns = [], seedSpots = [];
   for (let r = 0; r < MAP_ROWS; r++) {
     for (let c = 0; c < MAP_COLS; c++) {
       const ch = LAYOUT[r][c];
@@ -331,6 +377,13 @@
         solids.push({ x: c * TILE, y: r * TILE, w: TILE, h: TILE, ch, c, r });
       } else if (ch === "^") {
         springs.push({ x: c * TILE + 4, y: r * TILE + 18, w: TILE - 8, h: 22 });
+      } else if (ch === "E") {
+        botSpawns.push({ x: c * TILE + 20, y: r * TILE + 20 });
+      }
+      if (r >= 2 && r < MAP_ROWS - 2 && c >= 2 && c < MAP_COLS - 2) {
+        if (ch === " " && ["#", "B", "?"].includes(LAYOUT[r + 1][c])) {
+          seedSpots.push({ x: c * TILE + 20, y: r * TILE + 14 });
+        }
       }
     }
   }
@@ -344,12 +397,12 @@
     return true;
   }
 
-  // --- Stan gry i sieci ---
+  // --- Stan gry ---
   const saved = loadLocalSave();
   const me = {
-    id: null,
+    id: "player",
     name: saved.nick,
-    x: 220, y: WORLD_H - 120, vx: 0, vy: 0, w: 32, h: 34,
+    x: 220, y: WORLD_H - 120, vx: 0, vy: 0,
     onGround: false, jumpsLeft: 2,
     hp: 100, maxHp: 100, alive: true, respawnTimer: 0, invuln: 1.2,
     skin_id: saved.skin_id, owned_skins: saved.owned_skins,
@@ -359,30 +412,35 @@
     speedTimer: 0, shieldTimer: 0, damageTimer: 0,
   };
 
+  let gameMode = "menu"; // "menu" | "single" | "multi"
+  let difficultyId = "normalny";
   let ws = null;
   let roomCode = "";
-  let inGame = false;
   let shopOpen = false;
   let shopTab = "weapons";
   let camX = 0, camY = 0, elapsed = 0;
   let netSendTimer = 0;
   let remotePlayers = new Map();
-  let serverSeeds = [];
-  let serverPowerups = [];
+  let spBots = [];
+  let activeSeeds = [];
+  let activePowerups = [];
   let blockCooldowns = {};
+  let spSeedTimer = 1.5;
+  let spNextId = 1;
+  let spWon = false;
   let bullets = [];
   let particles = [];
   let notices = [];
   let keys = {};
   let mouseX = SCREEN_W / 2, mouseY = SCREEN_H / 2, mouseDown = false;
 
-  // --- Elementy DOM ---
+  // --- DOM ---
   const lobbyEl = document.getElementById("lobby");
-  const roomBar = document.getElementById("roomBar");
-  const roomCodeBadge = document.getElementById("roomCodeBadge");
+  const topBar = document.getElementById("topBar");
+  const modeBadge = document.getElementById("modeBadge");
+  const copyInviteBtn = document.getElementById("copyInviteBtn");
   const nickInput = document.getElementById("nickInput");
   const roomInput = document.getElementById("roomInput");
-  const withBotsChk = document.getElementById("withBotsChk");
   const statusMsg = document.getElementById("statusMsg");
   const shopModal = document.getElementById("shopModal");
   const shopGrid = document.getElementById("shopGrid");
@@ -393,67 +451,129 @@
   const urlRoom = new URLSearchParams(window.location.search).get("room");
   if (urlRoom) roomInput.value = urlRoom.toUpperCase();
 
+  document.querySelectorAll(".diff-btn").forEach(btn => {
+    btn.onclick = () => {
+      difficultyId = btn.dataset.diff;
+      document.querySelectorAll(".diff-btn").forEach(b => b.classList.toggle("active", b === btn));
+    };
+  });
+
   function addNotice(text, color = "#ffd43b") {
     notices.push({ text, color, ttl: 4.5 });
     if (notices.length > 5) notices.shift();
   }
 
-  function connectAndJoin(code) {
-    const nick = nickInput.value.trim().slice(0, 14) || "Chomik";
-    me.name = nick;
+  function resetPlayerForRound() {
+    me.name = nickInput.value.trim().slice(0, 14) || "Chomik";
+    me.x = 220; me.y = WORLD_H - 120; me.vx = 0; me.vy = 0;
+    me.hp = me.maxHp; me.alive = true; me.invuln = 1.4;
+    me.weapon_id = "ziarna";
+    me.owned_weapons = new Set(["ziarna"]); // Bronie resetują się w nowej rundzie!
+    me.total_seeds = 0;
+    me.kills = 0;
+    me.speedTimer = 0; me.shieldTimer = 0; me.damageTimer = 0;
+    bullets = []; particles = []; notices = [];
     writeLocalSave();
-    statusMsg.textContent = "Łączenie z serwerem...";
+  }
 
+  function returnToMenu() {
+    openShop(false);
+    if (ws) { try { ws.close(); } catch {} ws = null; }
+    gameMode = "menu";
+    roomCode = "";
+    remotePlayers.clear();
+    spBots = [];
+    lobbyEl.classList.remove("hidden");
+    topBar.classList.add("hidden");
+    copyInviteBtn.classList.add("hidden");
+    statusMsg.textContent = "";
+  }
+
+  // --- Start trybu SINGLEPLAYER (7 BOTÓW!) ---
+  function startSingleplayer() {
+    if (ws) { try { ws.close(); } catch {} ws = null; }
+    resetPlayerForRound();
+    me.id = "player";
+    gameMode = "single";
+    spWon = false;
+    blockCooldowns = {};
+    activeSeeds = [];
+    activePowerups = [];
+    const diff = DIFFICULTIES[difficultyId];
+
+    spBots = SP_BOT_PRESETS.map((p, i) => {
+      const sp = botSpawns[i % botSpawns.length];
+      return {
+        id: `spbot_${i}`, name: p.name, skin_id: p.skin, weapon_id: p.weapon,
+        x: sp.x, y: sp.y, vx: 0, vy: 0, aim: 0, facingRight: true,
+        hp: diff.botHp, maxHp: diff.botHp, alive: true, respawnTimer: 0, invuln: 1.0,
+        onGround: false, jumpsLeft: 2, shootCd: 0.6 + Math.random(),
+        dir: Math.random() < 0.5 ? -1 : 1, changeTimer: 1 + Math.random(), jumpCd: 0,
+        total_seeds: 0, kills: 0,
+      };
+    });
+    for (let i = 0; i < 12; i++) spawnLocalSeed();
+
+    lobbyEl.classList.add("hidden");
+    topBar.classList.remove("hidden");
+    copyInviteBtn.classList.add("hidden");
+    modeBadge.textContent = `SINGLEPLAYER (7 BOTÓW — ${diff.name.toUpperCase()})`;
+    addNotice(`Start! Zbierz ${WIN_SEEDS_GOAL} ziaren słonecznika!`, "#69db7c");
+    beep(520, 880, 0.14, "triangle");
+  }
+
+  function spawnLocalSeed(x, y) {
+    if (activeSeeds.length >= 24) return;
+    if (x === undefined) {
+      const sp = seedSpots[Math.floor(Math.random() * seedSpots.length)];
+      x = sp.x; y = sp.y;
+    }
+    activeSeeds.push({ id: spNextId++, x, y, value: 1 });
+  }
+
+  // --- Start trybu MULTIPLAYER (BEZ BOTÓW!) ---
+  function connectAndJoin(code) {
+    resetPlayerForRound();
+    statusMsg.textContent = "Łączenie z serwerem...";
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${proto}//${location.host}/ws`;
     if (ws) try { ws.close(); } catch {}
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: "join",
-        room: code,
-        name: me.name,
-        skin_id: me.skin_id,
-        with_bots: withBotsChk.checked,
-      }));
+      ws.send(JSON.stringify({ type: "join", room: code, name: me.name, skin_id: me.skin_id }));
     };
-    ws.onerror = () => {
-      statusMsg.textContent = "Nie udało się połączyć z serwerem!";
-    };
+    ws.onerror = () => { statusMsg.textContent = "Nie udało się połączyć z serwerem!"; };
     ws.onclose = () => {
-      if (inGame) {
-        addNotice("Rozłączono z serwerem — odśwież stronę.", "#ff6b6b");
-      }
+      if (gameMode === "multi") addNotice("Rozłączono z serwerem — wróć do Menu [ESC].", "#ff6b6b");
     };
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data);
       if (msg.type === "welcome") {
         me.id = msg.player_id;
         roomCode = msg.room;
-        inGame = true;
+        gameMode = "multi";
         lobbyEl.classList.add("hidden");
-        roomBar.classList.remove("hidden");
-        roomCodeBadge.textContent = roomCode;
+        topBar.classList.remove("hidden");
+        copyInviteBtn.classList.remove("hidden");
+        modeBadge.textContent = `MULTIPLAYER (BEZ BOTÓW)  |  KOD: ${roomCode}`;
         history.replaceState(null, "", `?room=${roomCode}`);
         applySnapshot(msg);
-        addNotice(`Dołączono do pokoju ${roomCode}! Wyślij link kolegom!`, "#69db7c");
+        addNotice(`Pokój ${roomCode} gotowy! Wyślij link kolegom!`, "#69db7c");
         beep(520, 880, 0.14, "triangle");
       } else if (msg.type === "snapshot") {
         applySnapshot(msg);
       } else if (msg.type === "shoot") {
         spawnWeaponBullets(msg.x, msg.y, msg.angle, msg.weapon_id, msg.owner_id, msg.owner_name || "Gracz", msg.damage_mult || 1.0, false);
       } else if (msg.type === "damaged" && msg.target_id === me.id) {
-        takeLocalDamage(msg.damage, msg.attacker_id, msg.attacker_name || "Wróg");
+        takeLocalDamage(msg.damage, msg.attacker_id, msg.attacker_name || "Gracz");
       } else if (msg.type === "kill_credit") {
         me.kills += 1;
         addNotice(`Pokonałeś ${msg.victim_name}!`, "#ffd43b");
         beep(440, 880, 0.18, "square");
       } else if (msg.type === "seed_awarded") {
-        me.seeds += msg.value;
-        me.total_seeds += msg.value;
-        writeLocalSave();
-        beep(980, 1320, 0.09, "square", 0.06);
+        me.seeds += msg.value; me.total_seeds += msg.value;
+        writeLocalSave(); beep(980, 1320, 0.09, "square", 0.06);
       } else if (msg.type === "powerup_awarded") {
         applyPowerup(msg.kind);
       } else if (msg.type === "block_bumped") {
@@ -465,29 +585,27 @@
   }
 
   function applySnapshot(msg) {
-    serverSeeds = msg.seeds || [];
-    serverPowerups = msg.powerups || [];
+    activeSeeds = msg.seeds || [];
+    activePowerups = msg.powerups || [];
     blockCooldowns = msg.blocks || {};
     const seen = new Set();
     for (const p of (msg.players || [])) {
       if (p.id === me.id) continue;
       seen.add(p.id);
       const prev = remotePlayers.get(p.id);
-      if (prev) {
-        prev.tx = p.x; prev.ty = p.y;
-        Object.assign(prev, p, { x: prev.x, y: prev.y, tx: p.x, ty: p.y });
-      } else {
-        remotePlayers.set(p.id, { ...p, tx: p.x, ty: p.y });
-      }
+      if (prev) Object.assign(prev, p, { x: prev.x, y: prev.y, tx: p.x, ty: p.y });
+      else remotePlayers.set(p.id, { ...p, tx: p.x, ty: p.y });
     }
     for (const id of Array.from(remotePlayers.keys())) {
       if (!seen.has(id)) remotePlayers.delete(id);
     }
   }
 
+  document.getElementById("startSingleBtn").onclick = () => startSingleplayer();
   document.getElementById("createRoomBtn").onclick = () => connectAndJoin("");
   document.getElementById("joinRoomBtn").onclick = () => connectAndJoin(roomInput.value.trim());
-  document.getElementById("copyInviteBtn").onclick = async () => {
+  document.getElementById("menuBtnTop").onclick = () => returnToMenu();
+  copyInviteBtn.onclick = async () => {
     const url = `${location.origin}/?room=${roomCode}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -497,7 +615,232 @@
     }
   };
 
-  // --- Sklep ---
+  // --- Rysowanie WSZYSTKICH 22 skórek chomików z naprawionymi czapkami! ---
+  function drawHamsterAvatar(g, cx, cy, skinId, facingRight, aim, scale = 1.0) {
+    const skin = SKINS[skinId] || SKINS.klasyczny;
+    const d = facingRight ? 1 : -1;
+    const r = 17 * scale;
+    const topY = cy - r;
+    const s = (v) => v * scale;
+
+    g.save();
+    // Peleryny za plecami (Król, Wampir, Super-Chomik)
+    if (skinId === "krol" || skinId === "wampir" || skinId === "superbohater") {
+      g.fillStyle = skinId === "wampir" ? "#281630" : skin.accent;
+      g.beginPath();
+      g.moveTo(cx - d * s(8), cy - s(6));
+      g.lineTo(cx - d * s(24), cy + s(16));
+      g.lineTo(cx - d * s(6), cy + s(16));
+      g.closePath();
+      g.fill();
+      if (skinId === "wampir") { g.strokeStyle = skin.accent; g.lineWidth = s(2); g.stroke(); }
+    }
+
+    // Uszka
+    for (const ex of [cx - s(10), cx + s(10)]) {
+      g.fillStyle = skinId === "panda" ? "#202228" : skin.body;
+      g.beginPath(); g.arc(ex, cy - s(13), s(6), 0, Math.PI * 2); g.fill();
+      g.fillStyle = skin.ear;
+      g.beginPath(); g.arc(ex, cy - s(13), s(3.4), 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#281e19"; g.lineWidth = s(1.2);
+      g.beginPath(); g.arc(ex, cy - s(13), s(6), 0, Math.PI * 2); g.stroke();
+    }
+
+    // Ciałko i brzuszek
+    g.fillStyle = skin.body;
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+    g.fillStyle = skin.belly;
+    g.beginPath(); g.ellipse(cx, cy + s(7), s(10), s(7), 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = skinId === "diament" ? "#ffffff" : "#281e19";
+    g.lineWidth = s(2);
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
+
+    // Gwiazda Super-Chomika / Chustka Kowboja
+    if (skinId === "superbohater") {
+      g.fillStyle = "#ffd43b";
+      g.beginPath(); g.arc(cx, cy + s(8), s(4.5), 0, Math.PI * 2); g.fill();
+      g.fillStyle = skin.accent;
+      g.beginPath(); g.arc(cx, cy + s(8), s(2), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "kowboj") {
+      g.fillStyle = skin.accent;
+      g.beginPath();
+      g.moveTo(cx - s(10), cy + s(4)); g.lineTo(cx + s(10), cy + s(4)); g.lineTo(cx + d * s(2), cy + s(13));
+      g.closePath(); g.fill();
+    }
+
+    // Policzki
+    if (skinId !== "robot" && skinId !== "duch") {
+      g.fillStyle = skinId === "zombie" ? "#91c878" : "#f5a0a5";
+      g.beginPath(); g.arc(cx + d * s(9), cy + s(2), s(3.8), 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx - d * s(4), cy + s(2), s(3.3), 0, Math.PI * 2); g.fill();
+    }
+
+    // Oczy i maski
+    const eye1 = [cx + d * s(6), cy - s(4)], eye2 = [cx - d * s(2), cy - s(4)];
+    if (skinId === "cyber") {
+      g.fillStyle = "#141e32"; g.fillRect(cx - s(11), cy - s(8), s(22), s(8));
+      g.fillStyle = skin.accent; g.fillRect(cx - s(9.5), cy - s(6.5), s(19), s(5));
+    } else if (skinId === "robot") {
+      g.fillStyle = "#19202a"; g.fillRect(cx - s(10), cy - s(8), s(20), s(9));
+      g.fillStyle = "#ffe646";
+      g.beginPath(); g.arc(cx - s(4), cy - s(3.5), s(2.5), 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx + s(5), cy - s(3.5), s(2.5), 0, Math.PI * 2); g.fill();
+    } else {
+      if (skinId === "panda") {
+        g.fillStyle = "#202228";
+        for (const [ex, ey] of [eye1, eye2]) { g.beginPath(); g.arc(ex, ey, s(5.2), 0, Math.PI * 2); g.fill(); }
+      } else if (skinId === "superbohater") {
+        g.fillStyle = skin.accent;
+        g.fillRect(cx - s(12), cy - s(8), s(24), s(8));
+      }
+      const lx = Math.cos(aim) * s(1.3), ly = Math.sin(aim) * s(1.1);
+      const eyeCol = skinId === "wampir" ? "#e6232d" : (skinId === "duch" ? "#ffeb55" : "#181616");
+      [eye1, eye2].forEach(([ex, ey], idx) => {
+        if (skinId === "pirat" && idx === 1) {
+          g.strokeStyle = "#19191e"; g.lineWidth = s(2);
+          g.beginPath(); g.moveTo(cx - r + s(2), cy - s(9)); g.lineTo(cx + r - s(2), cy - s(1)); g.stroke();
+          g.fillStyle = "#19191e"; g.beginPath(); g.arc(ex, ey, s(4.5), 0, Math.PI * 2); g.fill();
+        } else {
+          const er = s(skinId === "zombie" && idx === 0 ? 3.8 : 3.1);
+          g.fillStyle = eyeCol; g.beginPath(); g.arc(ex + lx, ey + ly, er, 0, Math.PI * 2); g.fill();
+          g.fillStyle = "#fff"; g.beginPath(); g.arc(ex + lx - s(1), ey + ly - s(1), s(1.1), 0, Math.PI * 2); g.fill();
+        }
+      });
+    }
+
+    // Nosek + kły Wampira / szew Zombie
+    g.fillStyle = "#eb7882";
+    g.beginPath(); g.arc(cx + d * s(3), cy + s(1), s(2.2), 0, Math.PI * 2); g.fill();
+    if (skinId === "wampir") {
+      g.fillStyle = "#fff";
+      g.beginPath(); g.moveTo(cx - s(2), cy + s(3)); g.lineTo(cx, cy + s(8)); g.lineTo(cx + s(2), cy + s(3)); g.fill();
+      g.beginPath(); g.moveTo(cx + s(4), cy + s(3)); g.lineTo(cx + s(6), cy + s(8)); g.lineTo(cx + s(8), cy + s(3)); g.fill();
+    } else if (skinId === "zombie") {
+      g.strokeStyle = "#4b2d32"; g.lineWidth = s(1.8);
+      g.beginPath(); g.moveTo(cx - s(8), cy - s(11)); g.lineTo(cx + s(6), cy - s(10)); g.stroke();
+      for (const sx of [-5, -1, 3]) { g.beginPath(); g.moveTo(cx + s(sx), cy - s(13)); g.lineTo(cx + s(sx), cy - s(8)); g.stroke(); }
+    }
+
+    // Łapki
+    g.fillStyle = skin.ear;
+    g.beginPath(); g.ellipse(cx - s(7), cy + s(15), s(4.2), s(2.5), 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(cx + s(7), cy + s(15), s(4.2), s(2.5), 0, 0, Math.PI * 2); g.fill();
+
+    // --- CZAPKI I DODATKI (idealnie dopasowane do czubka głowy topY!) ---
+    if (skinId === "ninja") {
+      g.fillStyle = skin.accent;
+      g.fillRect(cx - r + s(1), cy - s(11), r * 2 - s(2), s(5));
+      g.strokeStyle = skin.accent; g.lineWidth = s(3);
+      g.beginPath(); g.moveTo(cx - d * r, cy - s(9)); g.lineTo(cx - d * (r + s(10)), cy - s(13)); g.stroke();
+      g.beginPath(); g.moveTo(cx - d * r, cy - s(7)); g.lineTo(cx - d * (r + s(8)), cy - s(4)); g.stroke();
+    } else if (skinId === "pirat") {
+      g.fillStyle = "#202026"; g.strokeStyle = "#ffd43b"; g.lineWidth = s(1.8);
+      g.beginPath();
+      g.moveTo(cx - s(19), topY + s(4)); g.lineTo(cx + s(19), topY + s(4));
+      g.lineTo(cx + s(13), topY - s(8)); g.lineTo(cx, topY - s(12)); g.lineTo(cx - s(13), topY - s(8));
+      g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#fff"; g.beginPath(); g.arc(cx, topY - s(3), s(3.2), 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#fff"; g.lineWidth = s(1.3);
+      g.beginPath(); g.moveTo(cx - s(5), topY + s(1)); g.lineTo(cx + s(5), topY - s(6)); g.stroke();
+      g.beginPath(); g.moveTo(cx - s(5), topY - s(6)); g.lineTo(cx + s(5), topY + s(1)); g.stroke();
+    } else if (skinId === "czarodziej") {
+      g.fillStyle = "#3c2a91"; g.strokeStyle = "#ffd43b"; g.lineWidth = s(1.8);
+      g.beginPath(); g.moveTo(cx - s(14), topY + s(3)); g.lineTo(cx + s(14), topY + s(3)); g.lineTo(cx + d * s(4), topY - s(16)); g.closePath();
+      g.fill(); g.stroke();
+      g.fillStyle = "#32237d"; g.fillRect(cx - s(18), topY + s(1), s(36), s(5));
+      g.fillStyle = "#ffd43b"; g.beginPath(); g.arc(cx, topY - s(5), s(2.8), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "szef_kuchni") {
+      g.fillStyle = "#fff";
+      g.beginPath(); g.arc(cx - s(7), topY - s(6), s(6), 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx, topY - s(9), s(7), 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx + s(7), topY - s(6), s(6), 0, Math.PI * 2); g.fill();
+      g.fillRect(cx - s(12), topY - s(5), s(24), s(9));
+      g.fillStyle = "#bec4d0"; g.fillRect(cx - s(12), topY + s(1), s(24), s(3));
+    } else if (skinId === "kowboj") {
+      g.fillStyle = "#9b5f30"; g.strokeStyle = "#5f3719"; g.lineWidth = s(1.6);
+      g.fillRect(cx - s(11), topY - s(9), s(22), s(11)); g.strokeRect(cx - s(11), topY - s(9), s(22), s(11));
+      g.fillStyle = "#87522a";
+      g.beginPath(); g.ellipse(cx, topY + s(2), s(21), s(3.8), 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.strokeStyle = "#ffd43b"; g.lineWidth = s(2);
+      g.beginPath(); g.moveTo(cx - s(11), topY); g.lineTo(cx + s(11), topY); g.stroke();
+    } else if (skinId === "rycerz") {
+      g.fillStyle = "#c3cddc"; g.strokeStyle = "#5f6978"; g.lineWidth = s(1.8);
+      g.beginPath();
+      g.moveTo(cx - s(16), topY + s(6)); g.lineTo(cx - s(13), topY - s(3)); g.lineTo(cx, topY - s(6));
+      g.lineTo(cx + s(13), topY - s(3)); g.lineTo(cx + s(16), topY + s(6)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#919bac"; g.fillRect(cx - s(17), topY + s(3), s(34), s(4));
+      g.fillStyle = skin.accent;
+      g.beginPath(); g.moveTo(cx, topY - s(14)); g.lineTo(cx - d * s(10), topY - s(6)); g.lineTo(cx + d * s(5), topY - s(5)); g.closePath(); g.fill();
+    } else if (skinId === "wiking") {
+      g.fillStyle = "#a5b0c0"; g.strokeStyle = "#505a69"; g.lineWidth = s(1.8);
+      g.beginPath();
+      g.moveTo(cx - s(16), topY + s(5)); g.lineTo(cx - s(12), topY - s(4)); g.lineTo(cx, topY - s(6));
+      g.lineTo(cx + s(12), topY - s(4)); g.lineTo(cx + s(16), topY + s(5)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#7d8898"; g.fillRect(cx - s(17), topY + s(2), s(34), s(4));
+      g.fillStyle = "#f5eed7";
+      g.beginPath(); g.moveTo(cx - s(13), topY + s(2)); g.lineTo(cx - s(22), topY - s(10)); g.lineTo(cx - s(8), topY - s(2)); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(cx + s(13), topY + s(2)); g.lineTo(cx + s(22), topY - s(10)); g.lineTo(cx + s(8), topY - s(2)); g.closePath(); g.fill();
+    } else if (skinId === "astronauta") {
+      g.strokeStyle = "rgba(180,235,255,0.92)"; g.lineWidth = s(3);
+      g.beginPath(); g.arc(cx, cy - s(1), r + s(5), 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = "#fff"; g.lineWidth = s(2);
+      g.beginPath(); g.moveTo(cx - s(10), topY - s(1)); g.lineTo(cx - s(4), topY - s(3)); g.stroke();
+    } else if (skinId === "kosmita") {
+      for (const side of [-1, 1]) {
+        const ax = cx + side * s(9), ay = topY - s(10);
+        g.strokeStyle = "#46aa4b"; g.lineWidth = s(2);
+        g.beginPath(); g.moveTo(cx + side * s(5), topY + s(2)); g.lineTo(ax, ay); g.stroke();
+        g.fillStyle = skin.accent; g.beginPath(); g.arc(ax, ay, s(3.5), 0, Math.PI * 2); g.fill();
+      }
+    } else if (skinId === "samuraj") {
+      g.fillStyle = skin.accent; g.strokeStyle = "#281419"; g.lineWidth = s(1.8);
+      g.beginPath();
+      g.moveTo(cx - s(17), topY + s(5)); g.lineTo(cx + s(17), topY + s(5));
+      g.lineTo(cx + s(12), topY - s(6)); g.lineTo(cx - s(12), topY - s(6)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#ffd43b";
+      g.beginPath();
+      g.moveTo(cx - s(9), topY - s(13)); g.lineTo(cx, topY - s(3)); g.lineTo(cx + s(9), topY - s(13)); g.lineTo(cx, topY - s(7));
+      g.closePath(); g.fill();
+    } else if (skinId === "robot") {
+      g.strokeStyle = "#5f6c7a"; g.lineWidth = s(2.8);
+      g.beginPath(); g.moveTo(cx, topY + s(1)); g.lineTo(cx, topY - s(10)); g.stroke();
+      g.fillStyle = skin.accent; g.beginPath(); g.arc(cx, topY - s(11), s(3.8), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "krol") {
+      g.fillStyle = "#ffd43b"; g.strokeStyle = "#a57314"; g.lineWidth = s(1.8);
+      g.beginPath();
+      g.moveTo(cx - s(12), topY + s(4)); g.lineTo(cx - s(12), topY - s(8)); g.lineTo(cx - s(5), topY - s(2));
+      g.lineTo(cx, topY - s(11)); g.lineTo(cx + s(5), topY - s(2)); g.lineTo(cx + s(12), topY - s(8));
+      g.lineTo(cx + s(12), topY + s(4)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#e12d41"; g.beginPath(); g.arc(cx, topY - s(2), s(2.5), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "ogien") {
+      g.fillStyle = "#ff731e";
+      g.beginPath();
+      g.moveTo(cx - s(13), topY + s(4)); g.lineTo(cx - s(10), topY - s(8)); g.lineTo(cx - s(4), topY - s(1));
+      g.lineTo(cx, topY - s(13)); g.lineTo(cx + s(5), topY - s(2)); g.lineTo(cx + s(11), topY - s(9));
+      g.lineTo(cx + s(13), topY + s(4)); g.closePath(); g.fill();
+      g.fillStyle = skin.accent;
+      g.beginPath(); g.moveTo(cx - s(7), topY + s(3)); g.lineTo(cx, topY - s(8)); g.lineTo(cx + s(7), topY + s(3)); g.closePath(); g.fill();
+    } else if (skinId === "lod") {
+      g.fillStyle = "#aff0ff"; g.strokeStyle = "#fff"; g.lineWidth = s(1.6);
+      g.beginPath();
+      g.moveTo(cx - s(12), topY + s(4)); g.lineTo(cx - s(8), topY - s(8)); g.lineTo(cx - s(2), topY);
+      g.lineTo(cx + s(1), topY - s(12)); g.lineTo(cx + s(6), topY - s(1)); g.lineTo(cx + s(11), topY - s(7));
+      g.lineTo(cx + s(12), topY + s(4)); g.closePath(); g.fill(); g.stroke();
+    } else if (skinId === "duch") {
+      g.fillStyle = "#fff";
+      g.beginPath(); g.arc(cx - s(16), topY + s(2), s(3), 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx + s(17), topY + s(6), s(2.5), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "diament") {
+      g.fillStyle = "#8cffff"; g.strokeStyle = "#fff"; g.lineWidth = s(1.8);
+      g.beginPath(); g.moveTo(cx, topY - s(13)); g.lineTo(cx + s(7), topY - s(5)); g.lineTo(cx, topY + s(2)); g.lineTo(cx - s(7), topY - s(5)); g.closePath();
+      g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(cx - s(17), topY + s(2)); g.lineTo(cx - s(13), topY + s(2)); g.moveTo(cx - s(15), topY); g.lineTo(cx - s(15), topY + s(4)); g.stroke();
+      g.beginPath(); g.moveTo(cx + s(14), topY); g.lineTo(cx + s(18), topY); g.moveTo(cx + s(16), topY - s(2)); g.lineTo(cx + s(16), topY + s(2)); g.stroke();
+    }
+    g.restore();
+  }
+
+  // --- Sklep z prawdziwymi podglądami czapek dla 22 skórek! ---
   function openShop(open) {
     shopOpen = open;
     shopModal.classList.toggle("hidden", !open);
@@ -542,7 +885,16 @@
         const eq = me.skin_id === sid;
         const div = document.createElement("div");
         div.className = "item" + (eq ? " active" : "");
-        div.innerHTML = `<div class="swatch" style="background:${s.body}; border-color:${s.accent}"></div><h4>${s.name}</h4><p>${s.desc}</p>`;
+
+        const prev = document.createElement("canvas");
+        prev.width = 96; prev.height = 96; prev.className = "preview";
+        const pctx = prev.getContext("2d");
+        drawHamsterAvatar(pctx, 48, 58, sid, true, 0, 1.3);
+        div.appendChild(prev);
+
+        const h4 = document.createElement("h4"); h4.textContent = s.name; div.appendChild(h4);
+        const p = document.createElement("p"); p.textContent = s.desc; div.appendChild(p);
+
         const b = document.createElement("button");
         b.className = eq ? "btn-green" : (owned ? "btn-blue" : "btn-gold");
         b.textContent = eq ? "ZAŁOŻONA" : (owned ? "ZAŁÓŻ" : `KUP (${s.cost} z.)`);
@@ -563,16 +915,20 @@
 
   // --- Sterowanie ---
   window.addEventListener("keydown", (e) => {
-    if (!inGame) return;
+    if (gameMode === "menu") return;
     const k = e.key.toLowerCase();
     if (k === "b" || k === "tab") { e.preventDefault(); openShop(!shopOpen); return; }
-    if (k === "escape" && shopOpen) { openShop(false); return; }
+    if (k === "escape") {
+      if (shopOpen) openShop(false);
+      else returnToMenu();
+      return;
+    }
     if (k === "m") { soundOn = !soundOn; addNotice(`Dźwięk: ${soundOn ? "ON" : "OFF"}`); return; }
     if (shopOpen) return;
 
     if ((k === "w" || k === " " || e.key === "ArrowUp") && !keys[k]) {
       e.preventDefault();
-      tryJump();
+      tryJump(me, true);
     }
     if (["1", "2", "3", "4"].includes(k)) {
       const wid = WEAPON_ORDER[Number(k) - 1];
@@ -591,7 +947,7 @@
   canvas.addEventListener("mousedown", (e) => { if (e.button === 0) mouseDown = true; });
   window.addEventListener("mouseup", () => { mouseDown = false; });
   canvas.addEventListener("wheel", (e) => {
-    if (!inGame || shopOpen) return;
+    if (gameMode === "menu" || shopOpen) return;
     const owned = WEAPON_ORDER.filter(w => me.owned_weapons.has(w));
     if (owned.length > 1) {
       const i = owned.indexOf(me.weapon_id);
@@ -607,20 +963,70 @@
     }
   }
 
-  function tryJump() {
-    if (!me.alive) return;
-    const mult = me.speedTimer > 0 ? 1.12 : 1.0;
-    if (me.onGround) {
-      me.vy = -JUMP * mult;
-      me.onGround = false;
-      me.jumpsLeft = 1;
-      beep(280, 620, 0.12, "square", 0.06);
-      spawnBurst(me.x, me.y + 16, "#eee", 5);
-    } else if (me.jumpsLeft > 0) {
-      me.vy = -DJUMP * mult;
-      me.jumpsLeft -= 1;
-      beep(440, 880, 0.14, "triangle", 0.08);
-      spawnBurst(me.x, me.y + 16, "#fff", 10);
+  function tryJump(ent, isPlayer) {
+    if (!ent.alive) return;
+    const mult = (ent.speedTimer || 0) > 0 ? 1.12 : 1.0;
+    if (ent.onGround) {
+      ent.vy = -JUMP * mult; ent.onGround = false; ent.jumpsLeft = 1;
+      if (isPlayer) beep(280, 620, 0.12, "square", 0.06);
+      spawnBurst(ent.x, ent.y + 16, "#eee", 5);
+    } else if (ent.jumpsLeft > 0) {
+      ent.vy = -DJUMP * mult; ent.jumpsLeft -= 1;
+      if (isPlayer) beep(440, 880, 0.14, "triangle", 0.08);
+      spawnBurst(ent.x, ent.y + 16, "#fff", 9);
+    }
+  }
+
+  function moveEntity(ent, dt, isPlayer) {
+    ent.vy = Math.min(MAX_FALL, ent.vy + GRAVITY * dt);
+    ent.x += ent.vx * dt;
+    let hitWall = false;
+    for (const s of solids) {
+      if (ent.x + 16 > s.x && ent.x - 16 < s.x + s.w && ent.y + 17 > s.y && ent.y - 17 < s.y + s.h) {
+        hitWall = true;
+        if (ent.vx > 0) ent.x = s.x - 16;
+        else if (ent.vx < 0) ent.x = s.x + s.w + 16;
+        ent.vx = 0;
+      }
+    }
+    ent.onGround = false;
+    ent.y += ent.vy * dt;
+    for (const s of solids) {
+      if (ent.x + 16 > s.x && ent.x - 16 < s.x + s.w && ent.y + 17 > s.y && ent.y - 17 < s.y + s.h) {
+        if (ent.vy > 0) {
+          ent.y = s.y - 17; ent.vy = 0; ent.onGround = true; ent.jumpsLeft = 2;
+        } else if (ent.vy < 0) {
+          ent.y = s.y + s.h + 17; ent.vy = 40;
+          if (s.ch === "?") bumpBlock(s.c, s.r, isPlayer);
+        }
+      }
+    }
+    for (const sp of springs) {
+      if (ent.x + 16 > sp.x && ent.x - 16 < sp.x + sp.w && ent.y + 17 > sp.y && ent.y - 17 < sp.y + sp.h && ent.vy >= -40) {
+        ent.vy = -SPRING_JUMP; ent.onGround = false; ent.jumpsLeft = 1;
+        if (isPlayer) beep(220, 920, 0.22, "square", 0.08);
+        spawnBurst(sp.x + sp.w / 2, sp.y, "#ff8787", 10);
+      }
+    }
+    return hitWall;
+  }
+
+  function bumpBlock(c, r, isPlayer) {
+    if (gameMode === "multi") {
+      if (isPlayer && ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "bump_block", col: c, row: r }));
+      return;
+    }
+    const key = `${c},${r}`;
+    if ((blockCooldowns[key] || 0) > 0) return;
+    blockCooldowns[key] = 12.0;
+    const bx = c * TILE + 20, by = r * TILE - 14;
+    if (isPlayer) beep(520, 260, 0.1, "square", 0.07);
+    spawnBurst(bx, by, "#ffd43b", 10);
+    if (Math.random() < 0.35) {
+      const kinds = ["speed", "shield", "heal", "damage"];
+      activePowerups.push({ id: spNextId++, x: bx, y: by, kind: kinds[Math.floor(Math.random() * kinds.length)], ttl: 18 });
+    } else {
+      for (let i = 0; i < 3; i++) spawnLocalSeed(bx + (Math.random() * 60 - 30), by);
     }
   }
 
@@ -644,15 +1050,17 @@
       writeLocalSave();
       spawnBurst(me.x, me.y, "#ffd43b", 18);
       addNotice(`Pokonał Cię ${attackerName}! Odradzanie...`, "#ff6b6b");
-      if (ws && ws.readyState === 1) {
+      if (gameMode === "multi" && ws && ws.readyState === 1) {
         ws.send(JSON.stringify({ type: "player_died", x: me.x, y: me.y, killer_id: attackerId, killer_name: attackerName }));
+      } else if (gameMode === "single") {
+        for (let i = 0; i < 3; i++) spawnLocalSeed(me.x + Math.random() * 60 - 30, me.y - 10);
       }
     }
   }
 
-  function spawnWeaponBullets(x, y, angle, wid, ownerId, ownerName, damageMult, sendNet) {
+  function spawnWeaponBullets(x, y, angle, wid, ownerId, ownerName, damageMult, sendNet, extraSpread = 0) {
     const w = WEAPONS[wid] || WEAPONS.ziarna;
-    const spreadRad = (w.spread * Math.PI) / 180;
+    const spreadRad = ((w.spread + extraSpread) * Math.PI) / 180;
     for (let i = 0; i < w.pellets; i++) {
       const a = angle + (Math.random() * 2 - 1) * spreadRad;
       bullets.push({
@@ -662,8 +1070,77 @@
       });
     }
     spawnBurst(x, y, w.color, 4);
-    if (sendNet && ws && ws.readyState === 1) {
+    if (sendNet && gameMode === "multi" && ws && ws.readyState === 1) {
       ws.send(JSON.stringify({ type: "shoot", x: Math.round(x), y: Math.round(y), angle: Number(angle.toFixed(3)), weapon_id: wid, damage_mult: damageMult }));
+    }
+  }
+
+  function updateSingleplayerBots(dt) {
+    const diff = DIFFICULTIES[difficultyId];
+    for (const k of Object.keys(blockCooldowns)) {
+      if (blockCooldowns[k] > 0) blockCooldowns[k] = Math.max(0, blockCooldowns[k] - dt);
+    }
+    spSeedTimer -= dt;
+    if (spSeedTimer <= 0) { spSeedTimer = 2.2; spawnLocalSeed(); }
+    activePowerups.forEach(p => p.ttl -= dt);
+    activePowerups = activePowerups.filter(p => p.ttl > 0);
+
+    const fighters = [me, ...spBots];
+    for (const bot of spBots) {
+      if (bot.shootCd > 0) bot.shootCd -= dt;
+      if (bot.invuln > 0) bot.invuln -= dt;
+      if (bot.jumpCd > 0) bot.jumpCd -= dt;
+      if (!bot.alive) {
+        bot.respawnTimer -= dt;
+        if (bot.respawnTimer <= 0) {
+          const sp = botSpawns[Math.floor(Math.random() * botSpawns.length)];
+          bot.x = sp.x; bot.y = sp.y; bot.vx = 0; bot.vy = 0;
+          bot.hp = bot.maxHp; bot.alive = true; bot.invuln = 1.4;
+        }
+        continue;
+      }
+
+      bot.changeTimer -= dt;
+      let target = null, bestD = 99999;
+      for (const other of fighters) {
+        if (other === bot || !other.alive) continue;
+        const d = Math.hypot(other.x - bot.x, other.y - bot.y) * (other === me ? 0.85 : 1.0);
+        if (d < bestD) { bestD = d; target = other; }
+      }
+
+      if (target) {
+        const dx = target.x - bot.x, dy = target.y - bot.y, dist = Math.hypot(dx, dy);
+        const pref = bot.weapon_id === "awp" ? 340 : (bot.weapon_id === "shotgun" ? 110 : 210);
+        if (dist > pref + 40) bot.dir = dx > 0 ? 1 : -1;
+        else if (dist < pref - 50) bot.dir = dx > 0 ? -1 : 1;
+        else if (bot.changeTimer <= 0) { bot.dir = Math.random() < 0.5 ? -1 : 1; bot.changeTimer = 0.8 + Math.random(); }
+        if (dy < -60 && bot.jumpCd <= 0 && Math.random() < 0.06) { tryJump(bot, false); bot.jumpCd = 0.7; }
+
+        bot.aim = Math.atan2(dy, dx);
+        bot.facingRight = dx >= 0;
+        if (dist < 460 && bot.shootCd <= 0 && !pointHitsSolid((bot.x + target.x) * 0.5, (bot.y + target.y) * 0.5)) {
+          const w = WEAPONS[bot.weapon_id];
+          bot.shootCd = w.cd * diff.cd;
+          spawnWeaponBullets(bot.x + Math.cos(bot.aim) * 24, bot.y + Math.sin(bot.aim) * 24, bot.aim, bot.weapon_id, bot.id, bot.name, diff.dmg, false, diff.spread);
+        }
+      }
+
+      bot.vx += (bot.dir * SPEED * diff.spd - bot.vx) * Math.min(1, 9 * dt);
+      const hitWall = moveEntity(bot, dt, false);
+      if (hitWall) {
+        if (bot.jumpCd <= 0) { tryJump(bot, false); bot.jumpCd = 0.5; }
+        else bot.dir *= -1;
+      }
+      if (bot.onGround && bot.jumpCd <= 0 && Math.random() < 0.008) { tryJump(bot, false); bot.jumpCd = 0.8; }
+
+      // Boty zbierają ziarna
+      for (let i = activeSeeds.length - 1; i >= 0; i--) {
+        if (Math.hypot(activeSeeds[i].x - bot.x, activeSeeds[i].y - bot.y) < 26) {
+          bot.total_seeds += activeSeeds[i].value;
+          activeSeeds.splice(i, 1);
+          break;
+        }
+      }
     }
   }
 
@@ -671,12 +1148,15 @@
     elapsed += dt;
     notices.forEach(n => n.ttl -= dt);
     notices = notices.filter(n => n.ttl > 0);
-    if (!inGame) return;
+    if (gameMode === "menu") return;
 
-    // Płynna interpolacja kolegów i botów
-    for (const rp of remotePlayers.values()) {
-      rp.x += (rp.tx - rp.x) * Math.min(1, 14 * dt);
-      rp.y += (rp.ty - rp.y) * Math.min(1, 14 * dt);
+    if (gameMode === "multi") {
+      for (const rp of remotePlayers.values()) {
+        rp.x += (rp.tx - rp.x) * Math.min(1, 14 * dt);
+        rp.y += (rp.ty - rp.y) * Math.min(1, 14 * dt);
+      }
+    } else if (gameMode === "single" && !shopOpen) {
+      updateSingleplayerBots(dt);
     }
 
     if (me.shootCd > 0) me.shootCd = Math.max(0, me.shootCd - dt);
@@ -688,8 +1168,7 @@
     if (!me.alive) {
       me.respawnTimer -= dt;
       if (me.respawnTimer <= 0) {
-        me.x = 220 + Math.random() * (WORLD_W - 440);
-        me.y = 220;
+        me.x = 220 + Math.random() * (WORLD_W - 440); me.y = 220;
         me.vx = 0; me.vy = 0; me.hp = me.maxHp; me.alive = true; me.invuln = 1.6;
       }
     } else if (!shopOpen) {
@@ -698,70 +1177,55 @@
       if (keys["d"] || keys["arrowright"]) dir += 1;
       const spd = SPEED * (me.speedTimer > 0 ? 1.38 : 1.0);
       me.vx += (dir * spd - me.vx) * Math.min(1, (me.onGround ? 16 : 9) * dt);
-      me.vy = Math.min(MAX_FALL, me.vy + GRAVITY * dt);
+      moveEntity(me, dt, true);
 
-      // Kolizje X
-      me.x += me.vx * dt;
-      for (const s of solids) {
-        if (me.x + 16 > s.x && me.x - 16 < s.x + s.w && me.y + 17 > s.y && me.y - 17 < s.y + s.h) {
-          if (me.vx > 0) me.x = s.x - 16;
-          else if (me.vx < 0) me.x = s.x + s.w + 16;
-          me.vx = 0;
-        }
-      }
-      // Kolizje Y
-      me.onGround = false;
-      me.y += me.vy * dt;
-      for (const s of solids) {
-        if (me.x + 16 > s.x && me.x - 16 < s.x + s.w && me.y + 17 > s.y && me.y - 17 < s.y + s.h) {
-          if (me.vy > 0) {
-            me.y = s.y - 17; me.vy = 0; me.onGround = true; me.jumpsLeft = 2;
-          } else if (me.vy < 0) {
-            me.y = s.y + s.h + 17; me.vy = 40;
-            if (s.ch === "?" && ws && ws.readyState === 1) {
-              ws.send(JSON.stringify({ type: "bump_block", col: s.c, row: s.r }));
-            }
-          }
-        }
-      }
-      // Trampoliny
-      for (const sp of springs) {
-        if (me.x + 16 > sp.x && me.x - 16 < sp.x + sp.w && me.y + 17 > sp.y && me.y - 17 < sp.y + sp.h && me.vy >= -40) {
-          me.vy = -SPRING_JUMP; me.onGround = false; me.jumpsLeft = 1;
-          beep(220, 920, 0.22, "square", 0.08);
-          spawnBurst(sp.x + sp.w / 2, sp.y, "#ff8787", 10);
-        }
-      }
-
-      // Celowanie myszką
       const wmx = mouseX + camX, wmy = mouseY + camY;
       me.aim = Math.atan2(wmy - me.y, wmx - me.x);
       me.facingRight = wmx >= me.x;
 
-      // Strzelanie
       if (mouseDown && me.shootCd <= 0) {
         const w = WEAPONS[me.weapon_id];
         me.shootCd = w.cd * (me.damageTimer > 0 ? 0.75 : 1.0);
         const dmgMult = me.damageTimer > 0 ? 2.0 : 1.0;
         const dist = me.weapon_id === "awp" ? 36 : 24;
-        const mx = me.x + Math.cos(me.aim) * dist;
-        const my = me.y + Math.sin(me.aim) * dist;
-        spawnWeaponBullets(mx, my, me.aim, me.weapon_id, me.id, me.name, dmgMult, true);
+        spawnWeaponBullets(me.x + Math.cos(me.aim) * dist, me.y + Math.sin(me.aim) * dist, me.aim, me.weapon_id, me.id, me.name, dmgMult, true);
         me.vx -= Math.cos(me.aim) * w.recoil * 0.4;
         beep(me.weapon_id === "awp" ? 200 : 480, 90, me.weapon_id === "awp" ? 0.24 : 0.08, "square", 0.08);
       }
 
-      // Zbieranie ziaren i power-upów (serwer potwierdza!)
-      for (const seed of serverSeeds) {
-        if (Math.hypot(seed.x - me.x, seed.y - me.y) < 28 && !seed._claimed) {
-          seed._claimed = true;
-          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "collect_seed", seed_id: seed.id }));
+      // Zbieranie ziaren i power-upów
+      for (let i = activeSeeds.length - 1; i >= 0; i--) {
+        const seed = activeSeeds[i];
+        if (Math.hypot(seed.x - me.x, seed.y - me.y) < 28) {
+          if (gameMode === "multi") {
+            if (!seed._claimed) {
+              seed._claimed = true;
+              if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "collect_seed", seed_id: seed.id }));
+            }
+          } else {
+            me.seeds += seed.value; me.total_seeds += seed.value;
+            activeSeeds.splice(i, 1);
+            writeLocalSave(); beep(980, 1320, 0.09, "square", 0.06);
+            if (!spWon && me.total_seeds >= WIN_SEEDS_GOAL) {
+              spWon = true;
+              addNotice(`ZWYCIĘSTWO, ${me.name}! Zebrałeś ${WIN_SEEDS_GOAL} ziaren!`, "#ffd43b");
+              beep(520, 1040, 0.3, "triangle", 0.12);
+            }
+          }
         }
       }
-      for (const pup of serverPowerups) {
-        if (Math.hypot(pup.x - me.x, pup.y - me.y) < 30 && !pup._claimed) {
-          pup._claimed = true;
-          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "collect_powerup", powerup_id: pup.id }));
+      for (let i = activePowerups.length - 1; i >= 0; i--) {
+        const pup = activePowerups[i];
+        if (Math.hypot(pup.x - me.x, pup.y - me.y) < 30) {
+          if (gameMode === "multi") {
+            if (!pup._claimed) {
+              pup._claimed = true;
+              if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "collect_powerup", powerup_id: pup.id }));
+            }
+          } else {
+            applyPowerup(pup.kind);
+            activePowerups.splice(i, 1);
+          }
         }
       }
     }
@@ -772,150 +1236,112 @@
       if (b.life <= 0 || pointHitsSolid(b.x, b.y)) {
         b.dead = true; spawnBurst(b.x, b.y, b.color, 3); continue;
       }
-      // Trafienia moimi pociskami w kolegów lub boty -> wysyłamy na serwer
-      if (b.ownerId === me.id) {
-        for (const rp of remotePlayers.values()) {
-          if (!rp.alive) continue;
-          if (Math.abs(b.x - rp.x) < 18 && Math.abs(b.y - rp.y) < 19) {
+      if (gameMode === "multi") {
+        if (b.ownerId === me.id) {
+          for (const rp of remotePlayers.values()) {
+            if (!rp.alive) continue;
+            if (Math.abs(b.x - rp.x) < 18 && Math.abs(b.y - rp.y) < 19) {
+              b.dead = true; spawnBurst(b.x, b.y, "#ff5555", 6); beep(300, 140, 0.07, "square", 0.06);
+              if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "hit", target_id: rp.id, damage: b.dmg, weapon_id: b.wid }));
+              break;
+            }
+          }
+        } else if (me.alive && Math.abs(b.x - me.x) < 18 && Math.abs(b.y - me.y) < 19) {
+          b.dead = true;
+        }
+      } else {
+        // Kolizje pocisków w Singleplayer (Gracz + 7 botów)
+        if (b.ownerId !== me.id && me.alive && Math.abs(b.x - me.x) < 18 && Math.abs(b.y - me.y) < 19) {
+          b.dead = true; takeLocalDamage(b.dmg, b.ownerId, b.ownerName); continue;
+        }
+        for (const bot of spBots) {
+          if (!bot.alive || b.ownerId === bot.id) continue;
+          if (Math.abs(b.x - bot.x) < 18 && Math.abs(b.y - bot.y) < 19) {
             b.dead = true;
-            spawnBurst(b.x, b.y, "#ff5555", 6);
-            beep(300, 140, 0.07, "square", 0.06);
-            if (ws && ws.readyState === 1) {
-              ws.send(JSON.stringify({ type: "hit", target_id: rp.id, damage: b.dmg, weapon_id: b.wid }));
+            if (bot.invuln <= 0) {
+              bot.hp -= b.dmg;
+              spawnBurst(bot.x, bot.y, "#ff5555", 5);
+              if (b.ownerId === me.id) beep(300, 140, 0.07, "square", 0.06);
+              if (bot.hp <= 0) {
+                bot.hp = 0; bot.alive = false; bot.respawnTimer = 3.4;
+                spawnBurst(bot.x, bot.y, "#ffd43b", 16);
+                for (let k = 0; k < 4; k++) spawnLocalSeed(bot.x + Math.random() * 70 - 35, bot.y - 10);
+                if (b.ownerId === me.id) {
+                  me.kills += 1;
+                  addNotice(`Pokonałeś bota ${bot.name}!`, "#ffd43b");
+                  beep(440, 880, 0.16, "square", 0.08);
+                }
+              }
             }
             break;
           }
-        }
-      } else if (me.alive && Math.abs(b.x - me.x) < 18 && Math.abs(b.y - me.y) < 19) {
-        // Trafienie pociskiem bota serwerowego
-        b.dead = true;
-        if (String(b.ownerId).startsWith("bot_")) {
-          takeLocalDamage(b.dmg, b.ownerId, b.ownerName);
         }
       }
     }
     bullets = bullets.filter(b => !b.dead);
 
-    // Cząsteczki
     for (const pt of particles) { pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 300 * dt; pt.life -= dt; }
     particles = particles.filter(pt => pt.life > 0);
 
-    // Kamera
     const tx = Math.max(0, Math.min(WORLD_W - SCREEN_W, me.x - SCREEN_W / 2));
     const ty = Math.max(0, Math.min(WORLD_H - SCREEN_H, me.y - SCREEN_H / 2));
     camX += (tx - camX) * Math.min(1, 8 * dt);
     camY += (ty - camY) * Math.min(1, 8 * dt);
 
-    // Wysyłanie stanu do serwera (20 Hz)
-    netSendTimer -= dt;
-    if (netSendTimer <= 0 && ws && ws.readyState === 1) {
-      netSendTimer = 0.05;
-      ws.send(JSON.stringify({
-        type: "update",
-        name: me.name,
-        x: Math.round(me.x * 10) / 10,
-        y: Math.round(me.y * 10) / 10,
-        vx: Math.round(me.vx),
-        vy: Math.round(me.vy),
-        aim: Number(me.aim.toFixed(3)),
-        facing_right: me.facingRight,
-        skin_id: me.skin_id,
-        weapon_id: me.weapon_id,
-        hp: me.hp,
-        max_hp: me.maxHp,
-        alive: me.alive,
-        seeds: me.seeds,
-        total_seeds: me.total_seeds,
-        kills: me.kills,
-        shield: Number(me.shieldTimer.toFixed(1)),
-        damage_boost: Number(me.damageTimer.toFixed(1)),
-      }));
+    if (gameMode === "multi") {
+      netSendTimer -= dt;
+      if (netSendTimer <= 0 && ws && ws.readyState === 1) {
+        netSendTimer = 0.05;
+        ws.send(JSON.stringify({
+          type: "update", name: me.name, x: Math.round(me.x * 10) / 10, y: Math.round(me.y * 10) / 10,
+          vx: Math.round(me.vx), vy: Math.round(me.vy), aim: Number(me.aim.toFixed(3)), facing_right: me.facingRight,
+          skin_id: me.skin_id, weapon_id: me.weapon_id, hp: me.hp, max_hp: me.maxHp, alive: me.alive,
+          seeds: me.seeds, total_seeds: me.total_seeds, kills: me.kills,
+          shield: Number(me.shieldTimer.toFixed(1)), damage_boost: Number(me.damageTimer.toFixed(1)),
+        }));
+      }
     }
   }
 
-  function drawHamster(p, isMe) {
+  function drawFighter(p, isMe) {
     if (!p.alive) return;
     const cx = p.x - camX, cy = p.y - camY;
-    const skin = SKINS[p.skin_id] || SKINS.klasyczny;
-    const d = p.facing_right === false || p.facingRight === false ? -1 : 1;
+    const facingRight = p.facing_right !== undefined ? p.facing_right : (p.facingRight !== false);
 
-    // Laser AWP dla mnie
     if (isMe && p.weapon_id === "awp") {
-      ctx.strokeStyle = "rgba(255,60,60,0.65)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(p.aim) * 750, cy + Math.sin(p.aim) * 750);
-      ctx.stroke();
+      ctx.strokeStyle = "rgba(255,60,60,0.65)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(p.aim) * 750, cy + Math.sin(p.aim) * 750); ctx.stroke();
     }
 
-    // Uszka
-    ctx.fillStyle = p.skin_id === "panda" ? "#202228" : skin.body;
-    ctx.strokeStyle = "#281e19"; ctx.lineWidth = 1.5;
-    for (const ex of [cx - 10, cx + 10]) {
-      ctx.beginPath(); ctx.arc(ex, cy - 13, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    }
-    // Ciałko
-    ctx.fillStyle = skin.body;
-    ctx.beginPath(); ctx.arc(cx, cy, 17, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = skin.belly;
-    ctx.beginPath(); ctx.ellipse(cx, cy + 7, 10, 7, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = p.skin_id === "diament" ? "#fff" : "#281e19";
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(cx, cy, 17, 0, Math.PI * 2); ctx.stroke();
-
-    // Oczy + charakterystyczne akcesoria
-    if (p.skin_id === "cyber") {
-      ctx.fillStyle = skin.accent;
-      ctx.fillRect(cx - 10, cy - 7, 20, 6);
-    } else {
-      ctx.fillStyle = p.skin_id === "wampir" ? "#e6232d" : "#181616";
-      ctx.beginPath(); ctx.arc(cx + d * 6, cy - 4, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx - d * 2, cy - 4, 3, 0, Math.PI * 2); ctx.fill();
-    }
-    // Korona / Czapka / Akcent na głowie
-    ctx.fillStyle = skin.accent;
-    if (p.skin_id === "krol" || p.skin_id === "diament" || p.skin_id === "ogien" || p.skin_id === "lod") {
-      ctx.beginPath();
-      ctx.moveTo(cx - 11, cy - 16); ctx.lineTo(cx - 7, cy - 26); ctx.lineTo(cx, cy - 20);
-      ctx.lineTo(cx + 7, cy - 26); ctx.lineTo(cx + 11, cy - 16); ctx.closePath();
-      ctx.fill();
-    } else if (p.skin_id !== "klasyczny" && p.skin_id !== "panda") {
-      ctx.fillRect(cx - 14, cy - 15, 28, 5);
-    }
+    drawHamsterAvatar(ctx, cx, cy, p.skin_id, facingRight, p.aim || 0, 1.0);
 
     // Broń
     const ang = p.aim || 0;
     const len = p.weapon_id === "awp" ? 34 : (p.weapon_id === "karabin" ? 26 : 22);
     ctx.strokeStyle = p.weapon_id === "awp" ? "#3c7341" : (p.weapon_id === "ziarna" ? "#d4a238" : "#444a57");
     ctx.lineWidth = p.weapon_id === "shotgun" ? 7 : 5;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len); ctx.stroke();
 
-    // Tarcza
     if ((p.shield || p.shieldTimer || 0) > 0) {
       ctx.strokeStyle = "#5ad2ff"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(cx, cy, 24, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.stroke();
     }
 
-    // Pasek HP + Nick
+    // Pasek HP i nick wyraźnie NAD czapką!
     const ratio = Math.max(0, (p.hp || 0) / (p.max_hp || p.maxHp || 100));
-    ctx.fillStyle = "#1d1d24"; ctx.fillRect(cx - 20, cy - 32, 40, 6);
-    ctx.fillStyle = isMe ? "#40c057" : "#fa5252"; ctx.fillRect(cx - 19, cy - 31, 38 * ratio, 4);
+    ctx.fillStyle = "#1d1d24"; ctx.fillRect(cx - 20, cy - 42, 40, 6);
+    ctx.fillStyle = isMe ? "#40c057" : "#fa5252"; ctx.fillRect(cx - 19, cy - 41, 38 * ratio, 4);
     ctx.font = "bold 13px Segoe UI"; ctx.textAlign = "center";
-    ctx.fillStyle = "#111"; ctx.fillText(p.name, cx + 1, cy - 36);
-    ctx.fillStyle = isMe ? "#ffd43b" : "#fff"; ctx.fillText(p.name, cx, cy - 37);
+    ctx.fillStyle = "#111"; ctx.fillText(p.name, cx + 1, cy - 46);
+    ctx.fillStyle = isMe ? "#ffd43b" : "#fff"; ctx.fillText(p.name, cx, cy - 47);
   }
 
   function draw() {
-    // Niebo gradientowe Mario
     const grad = ctx.createLinearGradient(0, 0, 0, SCREEN_H);
     grad.addColorStop(0, "#64b9ff"); grad.addColorStop(1, "#b4e6ff");
     ctx.fillStyle = grad; ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
 
-    // Chmurki i wzgórza
     ctx.fillStyle = "#62c46d";
     for (const [hx, hw, hh] of [[240, 220, 170], [680, 280, 220], [1180, 240, 180]]) {
       ctx.beginPath(); ctx.ellipse(hx - camX, 800 - camY, hw, hh, 0, 0, Math.PI * 2); ctx.fill();
@@ -925,7 +1351,6 @@
       ctx.beginPath(); ctx.ellipse(cx - camX, cy - camY, 48, 20, 0, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Kafelki mapy
     for (const s of solids) {
       const dx = s.x - camX, dy = s.y - camY;
       if (dx < -TILE || dx > SCREEN_W || dy < -TILE || dy > SCREEN_H) continue;
@@ -952,7 +1377,6 @@
       }
     }
 
-    // Grzybki-trampoliny
     for (const sp of springs) {
       const dx = sp.x - camX, dy = sp.y - camY;
       ctx.fillStyle = "#f5e8c8"; ctx.fillRect(dx + sp.w / 2 - 6, dy + 8, 12, sp.h - 8);
@@ -960,17 +1384,15 @@
       ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 7, sp.w / 2 + 4, 8, 0, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Ziarna słonecznika
-    for (const seed of serverSeeds) {
+    for (const seed of activeSeeds) {
       const sx = seed.x - camX, sy = seed.y - camY + Math.sin(elapsed * 5 + seed.id) * 3;
       ctx.fillStyle = "#41372d"; ctx.beginPath(); ctx.ellipse(sx, sy, 6, 9, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#f0e1be"; ctx.beginPath(); ctx.ellipse(sx, sy, 2.5, 7, 0, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Power-upy
     const pupCols = { speed: "#ffdc32", shield: "#46beff", heal: "#ff556e", damage: "#c85aff" };
     const pupTxt = { speed: "S", shield: "T", heal: "+", damage: "2x" };
-    for (const pup of serverPowerups) {
+    for (const pup of activePowerups) {
       const px = pup.x - camX, py = pup.y - camY + Math.sin(elapsed * 6 + pup.id) * 4;
       ctx.fillStyle = pupCols[pup.kind] || "#fff";
       ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.fill();
@@ -979,11 +1401,13 @@
       ctx.fillText(pupTxt[pup.kind] || "?", px, py + 5);
     }
 
-    // Gracze i boty
-    for (const rp of remotePlayers.values()) drawHamster(rp, false);
-    if (inGame) drawHamster(me, true);
+    if (gameMode === "multi") {
+      for (const rp of remotePlayers.values()) drawFighter(rp, false);
+    } else if (gameMode === "single") {
+      for (const bot of spBots) drawFighter(bot, false);
+    }
+    if (gameMode !== "menu") drawFighter(me, true);
 
-    // Pociski i cząsteczki
     for (const b of bullets) {
       ctx.fillStyle = b.color;
       ctx.beginPath(); ctx.arc(b.x - camX, b.y - camY, b.wid === "awp" ? 5 : 4, 0, Math.PI * 2); ctx.fill();
@@ -993,39 +1417,40 @@
       ctx.beginPath(); ctx.arc(pt.x - camX, pt.y - camY, Math.max(1, pt.r * (pt.life / pt.max)), 0, Math.PI * 2); ctx.fill();
     }
 
-    if (!inGame) return;
+    if (gameMode === "menu") return;
 
     // HUD lewy górny róg
     ctx.fillStyle = "rgba(22, 28, 44, 0.85)";
-    ctx.fillRect(14, 12, 260, 88);
-    ctx.strokeStyle = "#ffd43b"; ctx.lineWidth = 2; ctx.strokeRect(14, 12, 260, 88);
+    ctx.fillRect(14, 12, 275, 88);
+    ctx.strokeStyle = "#ffd43b"; ctx.lineWidth = 2; ctx.strokeRect(14, 12, 275, 88);
     ctx.textAlign = "left"; ctx.font = "bold 15px Segoe UI"; ctx.fillStyle = "#fff";
     ctx.fillText(`${me.name}  —  HP: ${me.hp}/${me.maxHp}`, 24, 34);
-    ctx.fillStyle = "#3a1d24"; ctx.fillRect(24, 42, 240, 14);
-    ctx.fillStyle = "#40c057"; ctx.fillRect(24, 42, 240 * (me.hp / me.maxHp), 14);
-    ctx.fillStyle = "#ffd43b"; ctx.font = "bold 17px Segoe UI";
-    ctx.fillText(`Ziarna: ${me.seeds}   |   Zabójstwa: ${me.kills}`, 24, 82);
+    ctx.fillStyle = "#3a1d24"; ctx.fillRect(24, 42, 255, 14);
+    ctx.fillStyle = "#40c057"; ctx.fillRect(24, 42, 255 * (me.hp / me.maxHp), 14);
+    ctx.fillStyle = "#ffd43b"; ctx.font = "bold 16px Segoe UI";
+    const goalTxt = gameMode === "single" ? ` (${me.total_seeds}/${WIN_SEEDS_GOAL})` : ` | Zabójstwa: ${me.kills}`;
+    ctx.fillText(`Ziarna: ${me.seeds}${goalTxt}`, 24, 82);
 
-    // Ranking pokoju (prawy górny róg)
-    const all = [me, ...Array.from(remotePlayers.values())].sort((a, b) => (b.total_seeds || 0) - (a.total_seeds || 0)).slice(0, 5);
+    // Ranking
+    const others = gameMode === "multi" ? Array.from(remotePlayers.values()) : spBots;
+    const all = [me, ...others].sort((a, b) => (b.total_seeds || 0) - (a.total_seeds || 0)).slice(0, 5);
     const lbH = 30 + all.length * 22;
     ctx.fillStyle = "rgba(22, 28, 44, 0.82)";
     ctx.fillRect(SCREEN_W - 224, 12, 210, lbH);
     ctx.strokeStyle = "#8899bb"; ctx.lineWidth = 2; ctx.strokeRect(SCREEN_W - 224, 12, 210, lbH);
     ctx.fillStyle = "#ffd43b"; ctx.font = "bold 13px Segoe UI";
-    ctx.fillText(`GRACZE W POKOJU (${remotePlayers.size + 1}):`, SCREEN_W - 214, 30);
+    const hdr = gameMode === "multi" ? `GRACZE W POKOJU (${others.length + 1}):` : "RANKING ZIAREN (TOP 5):";
+    ctx.fillText(hdr, SCREEN_W - 214, 30);
     all.forEach((f, idx) => {
       ctx.fillStyle = f.id === me.id ? "#ffd43b" : "#fff";
       ctx.fillText(`${idx + 1}. ${f.name}: ${f.total_seeds || 0} z.`, SCREEN_W - 214, 52 + idx * 22);
     });
 
-    // Powiadomienia (lewy dół)
     notices.forEach((n, idx) => {
       ctx.fillStyle = n.color; ctx.font = "bold 14px Segoe UI"; ctx.textAlign = "left";
       ctx.fillText(n.text, 18, SCREEN_H - 74 - (notices.length - 1 - idx) * 20);
     });
 
-    // Pasek broni na dole
     const slotW = 148, gap = 10, startX = (SCREEN_W - (slotW * 4 + gap * 3)) / 2;
     WEAPON_ORDER.forEach((wid, i) => {
       const w = WEAPONS[wid], owned = me.owned_weapons.has(wid), sel = me.weapon_id === wid;

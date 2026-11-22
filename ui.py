@@ -284,13 +284,13 @@ class ShopOverlay:
                 pygame.draw.rect(surf, (38, 45, 68), card, border_radius=10)
                 pygame.draw.rect(surf, GOLD if equipped else (90, 100, 130), card, 2, border_radius=10)
 
-                # Podgląd skórki chomika!
-                draw_hamster_avatar(surf, card.centerx, card.y + 54, sid, True, 0.0, scale=1.25)
+                # Podgląd skórki chomika (z zapasem miejsca nad głową na wysokie czapki!)
+                draw_hamster_avatar(surf, card.centerx, card.y + 60, sid, True, 0.0, scale=1.16)
 
                 nl = f_md.render(skin["name"], True, WHITE)
-                surf.blit(nl, (card.centerx - nl.get_width() // 2, card.y + 88))
+                surf.blit(nl, (card.centerx - nl.get_width() // 2, card.y + 92))
                 dl = f_xs.render(skin["desc"][:34], True, (190, 200, 220))
-                surf.blit(dl, (card.centerx - dl.get_width() // 2, card.y + 111))
+                surf.blit(dl, (card.centerx - dl.get_width() // 2, card.y + 114))
 
                 btn = pygame.Rect(card.x + 24, card.bottom - 38, card.w - 48, 30)
                 if equipped:
@@ -568,17 +568,17 @@ def draw_start_screen(
         rl = f_xs.render(r_txt, True, WHITE)
         surf.blit(rl, (reset_btn.centerx - rl.get_width() // 2, reset_btn.centery - rl.get_height() // 2))
 
-    # Przyciski ZAGRAJ (Boty) i MULTIPLAYER ONLINE
-    btn = pygame.Rect(card.x + 28, card.bottom - 74, 285, 54)
+    # Przyciski SINGLEPLAYER (7 Botów) i MULTIPLAYER (Bez botów)
+    btn = pygame.Rect(card.x + 24, card.bottom - 74, 316, 54)
     pygame.draw.rect(surf, (58, 185, 82), btn, border_radius=12)
     pygame.draw.rect(surf, WHITE, btn, 3, border_radius=12)
-    bl = f_btn.render("ZAGRAJ! [ENTER]", True, WHITE)
+    bl = get_font(20, bold=True).render("SINGLEPLAYER (7 BOTÓW)", True, WHITE)
     surf.blit(bl, (btn.centerx - bl.get_width() // 2, btn.centery - bl.get_height() // 2))
 
-    mp_btn = pygame.Rect(btn.right + 16, card.bottom - 74, 330, 54)
+    mp_btn = pygame.Rect(btn.right + 14, card.bottom - 74, 316, 54)
     pygame.draw.rect(surf, (42, 130, 225), mp_btn, border_radius=12)
     pygame.draw.rect(surf, GOLD, mp_btn, 3, border_radius=12)
-    ml = f_btn.render("MULTIPLAYER ONLINE", True, WHITE)
+    ml = get_font(20, bold=True).render("MULTIPLAYER (BEZ BOTÓW)", True, WHITE)
     surf.blit(ml, (mp_btn.centerx - ml.get_width() // 2, mp_btn.centery - ml.get_height() // 2))
 
     return btn, name_rect, diff_buttons, reset_btn, mp_btn
@@ -608,7 +608,7 @@ def draw_multiplayer_lobby(
 
     t = f_big.render("MULTIPLAYER ONLINE", True, GOLD)
     surf.blit(t, (card.centerx - t.get_width() // 2, card.y + 24))
-    sub = f_sm.render("Cross-play: graj z kolegami w przeglądarce na Render.com lub w Pythonie!", True, (205, 222, 245))
+    sub = f_sm.render("Cross-play na Render.com — czyste PvP z kolegami (bez botów!)", True, (205, 222, 245))
     surf.blit(sub, (card.centerx - sub.get_width() // 2, card.y + 70))
 
     cursor = "|" if int(elapsed * 2.5) % 2 == 0 else ""

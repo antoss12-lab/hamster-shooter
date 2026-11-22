@@ -40,7 +40,7 @@ class MultiplayerClient:
         self.room_code: str = ""
         self.inbox: list[dict] = []
 
-    async def connect(self, server_addr: str, room_code: str, player_name: str, skin_id: str, with_bots: bool = True) -> tuple[bool, str]:
+    async def connect(self, server_addr: str, room_code: str, player_name: str, skin_id: str) -> tuple[bool, str]:
         await self.disconnect()
         url = normalize_ws_url(server_addr)
         self.status = f"Łączenie z {url}..."
@@ -54,7 +54,6 @@ class MultiplayerClient:
                     "room": room_code.strip().upper(),
                     "name": player_name,
                     "skin_id": skin_id,
-                    "with_bots": with_bots,
                 }
             )
             self.recv_task = asyncio.create_task(self._recv_loop())
