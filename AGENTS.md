@@ -19,7 +19,7 @@
 - **Styl:** zamknięta mapa 2D w stylu Mario (mury dookoła, platformy, złote bloki `?` uderzane od dołu, rury, trampoliny).
 - **Sterowanie:** podwójny skok (`W`/`Spacja`), celowanie myszą 360° i strzelanie (LPM).
 - **Zapis postępu (`save_system.py` / `localStorage`):**
-  - **Skórki chomików** (aktualnie 22), nick, poziom trudności i portfel ziaren **zapisują się na stałe**.
+  - **Skórki chomików** (aktualnie 50), nick, poziom trudności i portfel ziaren **zapisują się na stałe**.
   - **Bronie** (Karabin, Shotgun, AWP) **działają tylko w bieżącej rundzie** i resetują się do Miotacza Ziaren w nowej rundzie / po restarcie.
 
 ## 4. Styl kodu i nauka Pythona

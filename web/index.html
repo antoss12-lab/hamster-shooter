@@ -212,7 +212,7 @@
 
         <div class="controls">
           <b>Sterowanie:</b> A / D (bieg) • W / Spacja (skok i <b>podwójny skok</b>) • Myszka + LPM (celowanie i strzał)<br />
-          1–4 / Kółko: <b>Ziarna, Karabin, Shotgun, AWP</b> • <b>B</b>: Sklep (22 skórki zostają na stałe!) • <b>M</b>: Dźwięk • <b>ESC</b>: Menu
+          1–4 / Kółko: <b>Ziarna, Karabin, Shotgun, AWP</b> • <b>B</b>: Sklep (50 skórek zostaje na stałe!) • <b>M</b>: Dźwięk • <b>ESC</b>: Menu
         </div>
       </div>
     </div>
@@ -227,7 +227,7 @@
         </div>
         <div class="tabs">
           <button class="btn-dark" data-tab="weapons">BRONIE (na rundę)</button>
-          <button class="btn-dark" data-tab="skins">22 SKÓRKI (na stałe!)</button>
+          <button class="btn-dark" data-tab="skins">50 SKÓREK (na stałe!)</button>
         </div>
         <div id="shopGrid" class="grid"></div>
         <p id="shopMsg" style="color: #ffd43b; font-size: 14px; margin: 10px 0 0;"></p>
@@ -307,8 +307,37 @@
     superbohater: { name: "Super-Chomik",  cost: 32, body: "#417de1", belly: "#87b9fa", ear: "#3264c3", accent: "#e62d37", desc: "Maska, peleryna i gwiazda." },
     krol:         { name: "Król Ziaren",   cost: 36, body: "#f5c864", belly: "#fff5d2", ear: "#f5b4a5", accent: "#d22341", desc: "Złota korona władcy areny!" },
     diament:      { name: "Diamentowy",    cost: 45, body: "#41e6e1", belly: "#c3fffc", ear: "#2dc3c8", accent: "#ffffff", desc: "Najrzadsza kryształowa skórka!" },
+    // --- 28 nowych skórek (łącznie 50!) ---
+    policjant:    { name: "Policjant",     cost: 13, body: "#5a78b9", belly: "#afc6ee", ear: "#415a94", accent: "#ffd43b", desc: "Czapka policyjna i złota odznaka." },
+    budowlaniec:  { name: "Budowlaniec",   cost: 13, body: "#d2985c", belly: "#f8e2c0", ear: "#eba8a5", accent: "#fad228", desc: "Żółty kask ochronny!" },
+    strazak:      { name: "Strażak",       cost: 14, body: "#cd503e", belly: "#f8d0b9", ear: "#af3a2d", accent: "#ffd737", desc: "Czerwony hełm strażacki." },
+    lekarz:       { name: "Lekarz",        cost: 14, body: "#eef4fa", belly: "#ffffff", ear: "#f2b6be", accent: "#e6303a", desc: "Opaska z czerwonym krzyżykiem." },
+    pilkarz:      { name: "Piłkarz",       cost: 15, body: "#e1a86c", belly: "#fcf0de", ear: "#f0acaf", accent: "#e12832", desc: "Biało-czerwona opaska sportowa." },
+    klaun:        { name: "Chomik Klaun",  cost: 15, body: "#f8eee1", belly: "#fffaf5", ear: "#f5afbe", accent: "#eb2d37", desc: "Kolorowe loczki i czerwony nos!" },
+    kotek:        { name: "Chomik Kot",    cost: 15, body: "#eb9444", belly: "#ffe8c6", ear: "#f5acaf", accent: "#af5c20", desc: "Spiczaste kocie uszka i wąsiki!" },
+    piesek:       { name: "Chomik Pies",   cost: 15, body: "#daac76", belly: "#faebd2", ear: "#915c34", accent: "#87522a", desc: "Klapnięte uszka i łatka na oku!" },
+    detektyw:     { name: "Detektyw",      cost: 16, body: "#af845c", belly: "#ebd7bc", ear: "#c39187", accent: "#764e2d", desc: "Czapka Sherlocka i złoty monokl." },
+    kroliczek:    { name: "Króliczek",     cost: 16, body: "#f8eef5", belly: "#fffaff", ear: "#faacc8", accent: "#fa9bc3", desc: "Bardzo długie uszy królika!" },
+    magik:        { name: "Iluzjonista",   cost: 17, body: "#4e4860", belly: "#ebebf5", ear: "#706684", accent: "#dc2a3e", desc: "Czarny cylinder z wstążką!" },
+    balwan:       { name: "Bałwanek",      cost: 17, body: "#f2f8ff", belly: "#ffffff", ear: "#cde4f5", accent: "#f58223", desc: "Marchewkowy nosek i szalik!" },
+    mikolaj:      { name: "Mikołaj",       cost: 18, body: "#e4af87", belly: "#fffaf5", ear: "#f2b2b2", accent: "#dc232d", desc: "Czerwona czapka z pomponem!" },
+    pszczolka:    { name: "Pszczółka",     cost: 18, body: "#f8cd30", belly: "#ffeb87", ear: "#322d26", accent: "#26221e", desc: "Czarne paski, czułki i skrzydełka!" },
+    biedronka:    { name: "Biedronka",     cost: 18, body: "#e43034", belly: "#f8afaa", ear: "#262224", accent: "#1c1c20", desc: "Czerwona w czarne kropki!" },
+    dynia:        { name: "Dynia",         cost: 19, body: "#ee7d20", belly: "#ffaf4e", ear: "#c35c16", accent: "#48b241", desc: "Halloweenowa dynia z łodyżką!" },
+    kaktus:       { name: "Kaktus",        cost: 19, body: "#4eac52", belly: "#8ed484", ear: "#3a8a3e", accent: "#fa5fa5", desc: "Kolczasty kaktus z kwiatkiem!" },
+    mumia:        { name: "Mumia",         cost: 20, body: "#e0d6b9", belly: "#f2ebd4", ear: "#c0b698", accent: "#ffe146", desc: "Bandaże i świecące złote oczy!" },
+    szkielet:     { name: "Szkielet",      cost: 21, body: "#ebeef2", belly: "#fcfcff", ear: "#c3c8d2", accent: "#20222a", desc: "Szybki kościotrup z lochów!" },
+    rekin:        { name: "Chomik Rekin",  cost: 22, body: "#6c94b6", belly: "#e1eef8", ear: "#527696", accent: "#486c8c", desc: "Płetwa rekina i ostre ząbki!" },
+    gladiator:    { name: "Gladiator",     cost: 23, body: "#bc8a58", belly: "#eed0aa", ear: "#a27348", accent: "#daa834", desc: "Hełm gladiatora z grzebieniem!" },
+    gamer:        { name: "Pro-Gamer",     cost: 24, body: "#7648c6", belly: "#b998f2", ear: "#58349e", accent: "#41f5c3", desc: "Neonowe słuchawki RGB!" },
+    jednorozec:   { name: "Jednorożec",    cost: 25, body: "#fabce1", belly: "#ffe8f8", ear: "#ff96d2", accent: "#ffde55", desc: "Pastelowy chomik ze złotym rogiem!" },
+    dj:           { name: "Chomik DJ",     cost: 25, body: "#485273", belly: "#8e9ecd", ear: "#373e58", accent: "#ff5fc3", desc: "Ciemne okulary i słuchawki!" },
+    faraon:       { name: "Faraon",        cost: 26, body: "#d4a566", belly: "#f8e2b6", ear: "#bc8e54", accent: "#2a69d7", desc: "Nakrycie Nemes ze złotą kobrą!" },
+    smok:         { name: "Smoczy",        cost: 29, body: "#3aa55c", belly: "#ebcd69", ear: "#2a8044", accent: "#eb412d", desc: "Smocze rogi i ogniste kolce!" },
+    zloty:        { name: "Złoty Chomik",  cost: 38, body: "#faca3a", belly: "#fff09b", ear: "#e8af23", accent: "#fffabe", desc: "Szczere złoto ze świecącą aureolą!" },
+    galaktyka:    { name: "Galaktyczny",   cost: 50, body: "#221c48", belly: "#583e9e", ear: "#372a70", accent: "#91e8ff", desc: "Kosmos i pierścień Saturna!" },
   };
-  const SKIN_ORDER = Object.keys(SKINS);
+  const SKIN_ORDER = Object.keys(SKINS).sort((a, b) => SKINS[a].cost - SKINS[b].cost);
 
   const SP_BOT_PRESETS = [
     { name: "Bąbel",   skin: "pirat",   weapon: "ziarna" },
@@ -636,14 +665,38 @@
       if (skinId === "wampir") { g.strokeStyle = skin.accent; g.lineWidth = s(2); g.stroke(); }
     }
 
-    // Uszka
-    for (const ex of [cx - s(10), cx + s(10)]) {
-      g.fillStyle = skinId === "panda" ? "#202228" : skin.body;
-      g.beginPath(); g.arc(ex, cy - s(13), s(6), 0, Math.PI * 2); g.fill();
-      g.fillStyle = skin.ear;
-      g.beginPath(); g.arc(ex, cy - s(13), s(3.4), 0, Math.PI * 2); g.fill();
-      g.strokeStyle = "#281e19"; g.lineWidth = s(1.2);
-      g.beginPath(); g.arc(ex, cy - s(13), s(6), 0, Math.PI * 2); g.stroke();
+    // Uszka (specjalne dla królika, kota, psa, pszczółki!)
+    if (skinId === "kroliczek") {
+      for (const side of [-1, 1]) {
+        const ex = cx + side * s(8);
+        g.fillStyle = skin.body; g.beginPath(); g.ellipse(ex, topY - s(6), s(4), s(10), 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = skin.ear; g.beginPath(); g.ellipse(ex, topY - s(6), s(2), s(7), 0, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "#281e19"; g.lineWidth = s(1.1); g.beginPath(); g.ellipse(ex, topY - s(6), s(4), s(10), 0, 0, Math.PI * 2); g.stroke();
+      }
+    } else if (skinId === "kotek") {
+      for (const side of [-1, 1]) {
+        g.fillStyle = skin.body; g.strokeStyle = "#281e19"; g.lineWidth = s(1.2);
+        g.beginPath(); g.moveTo(cx + side * s(14), cy - s(9)); g.lineTo(cx + side * s(11), topY - s(8)); g.lineTo(cx + side * s(4), cy - s(14)); g.closePath();
+        g.fill(); g.stroke();
+      }
+    } else if (skinId === "piesek") {
+      for (const side of [-1, 1]) {
+        g.fillStyle = skin.ear; g.strokeStyle = "#281e19"; g.lineWidth = s(1.2);
+        g.beginPath(); g.ellipse(cx + side * s(14), cy + s(1), s(4.2), s(8.5), 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      }
+    } else {
+      if (skinId === "pszczolka") {
+        g.fillStyle = "#e6f8ff"; g.strokeStyle = "#96c3e1"; g.lineWidth = s(1.2);
+        g.beginPath(); g.ellipse(cx - d * s(18), cy - s(5), s(6.5), s(4.5), 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      }
+      for (const ex of [cx - s(10), cx + s(10)]) {
+        g.fillStyle = skinId === "panda" ? "#202228" : skin.body;
+        g.beginPath(); g.arc(ex, cy - s(13), s(6), 0, Math.PI * 2); g.fill();
+        g.fillStyle = skin.ear;
+        g.beginPath(); g.arc(ex, cy - s(13), s(3.4), 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "#281e19"; g.lineWidth = s(1.2);
+        g.beginPath(); g.arc(ex, cy - s(13), s(6), 0, Math.PI * 2); g.stroke();
+      }
     }
 
     // Ciałko i brzuszek
@@ -651,7 +704,32 @@
     g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
     g.fillStyle = skin.belly;
     g.beginPath(); g.ellipse(cx, cy + s(7), s(10), s(7), 0, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = skinId === "diament" ? "#ffffff" : "#281e19";
+
+    // Wzory na futerku (pszczółka, biedronka, mumia, galaktyka, bałwan, kaktus)
+    if (skinId === "pszczolka") {
+      g.strokeStyle = "#23201c"; g.lineWidth = s(3);
+      g.beginPath(); g.moveTo(cx - s(14), cy + s(3)); g.lineTo(cx + s(14), cy + s(3)); g.moveTo(cx - s(11), cy + s(10)); g.lineTo(cx + s(11), cy + s(10)); g.stroke();
+    } else if (skinId === "biedronka") {
+      g.fillStyle = "#1c1c20";
+      for (const [dx, dy] of [[-9, 4], [9, 5], [0, 10], [-6, 11], [6, -10]]) { g.beginPath(); g.arc(cx + s(dx), cy + s(dy), s(2.4), 0, Math.PI * 2); g.fill(); }
+    } else if (skinId === "mumia") {
+      g.strokeStyle = "#a5987d"; g.lineWidth = s(2);
+      for (const my of [-8, -1, 6, 12]) { g.beginPath(); g.moveTo(cx - s(14), cy + s(my)); g.lineTo(cx + s(14), cy + s(my - 2)); g.stroke(); }
+    } else if (skinId === "galaktyka") {
+      g.fillStyle = "#f0f5ff";
+      for (const [dx, dy] of [[-9, -6], [8, -9], [-5, 9], [9, 6], [2, -12]]) { g.beginPath(); g.arc(cx + s(dx), cy + s(dy), s(1.5), 0, Math.PI * 2); g.fill(); }
+    } else if (skinId === "balwan") {
+      g.fillStyle = "#dc2a34";
+      g.fillRect(cx - s(13), cy + s(5), s(26), s(5));
+      g.fillRect(cx + d * s(6), cy + s(7), s(5), s(9));
+    } else if (skinId === "kaktus") {
+      g.strokeStyle = "#e1f5c3"; g.lineWidth = s(1.8);
+      for (const side of [-1, 1]) {
+        for (const ky of [-4, 3, 9]) { g.beginPath(); g.moveTo(cx + side * r, cy + s(ky)); g.lineTo(cx + side * (r + s(4)), cy + s(ky - 1)); g.stroke(); }
+      }
+    }
+
+    g.strokeStyle = (skinId === "diament" || skinId === "galaktyka") ? "#ffffff" : (skinId === "zloty" ? "#fff082" : "#281e19");
     g.lineWidth = s(2);
     g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
 
@@ -689,12 +767,17 @@
       if (skinId === "panda") {
         g.fillStyle = "#202228";
         for (const [ex, ey] of [eye1, eye2]) { g.beginPath(); g.arc(ex, ey, s(5.2), 0, Math.PI * 2); g.fill(); }
+      } else if (skinId === "piesek") {
+        g.fillStyle = "#87522a"; g.beginPath(); g.arc(eye1[0], eye1[1], s(5.4), 0, Math.PI * 2); g.fill();
+      } else if (skinId === "szkielet") {
+        g.fillStyle = "#191a20";
+        for (const [ex, ey] of [eye1, eye2]) { g.beginPath(); g.arc(ex, ey, s(4.8), 0, Math.PI * 2); g.fill(); }
       } else if (skinId === "superbohater") {
         g.fillStyle = skin.accent;
         g.fillRect(cx - s(12), cy - s(8), s(24), s(8));
       }
       const lx = Math.cos(aim) * s(1.3), ly = Math.sin(aim) * s(1.1);
-      const eyeCol = skinId === "wampir" ? "#e6232d" : (skinId === "duch" ? "#ffeb55" : "#181616");
+      const eyeCol = skinId === "wampir" ? "#e6232d" : ((skinId === "duch" || skinId === "dynia" || skinId === "mumia") ? "#ffeb55" : (skinId === "galaktyka" ? "#78ebff" : "#181616"));
       [eye1, eye2].forEach(([ex, ey], idx) => {
         if (skinId === "pirat" && idx === 1) {
           g.strokeStyle = "#19191e"; g.lineWidth = s(2);
@@ -706,15 +789,34 @@
           g.fillStyle = "#fff"; g.beginPath(); g.arc(ex + lx - s(1), ey + ly - s(1), s(1.1), 0, Math.PI * 2); g.fill();
         }
       });
+      if (skinId === "dj") {
+        g.fillStyle = "#161822"; g.fillRect(cx - s(12), cy - s(8), s(11), s(7)); g.fillRect(cx + s(1), cy - s(8), s(11), s(7));
+        g.strokeStyle = skin.accent; g.lineWidth = s(2); g.beginPath(); g.moveTo(cx - s(12), cy - s(6)); g.lineTo(cx + s(12), cy - s(6)); g.stroke();
+      } else if (skinId === "detektyw") {
+        g.strokeStyle = "#ffd43b"; g.lineWidth = s(1.8); g.beginPath(); g.arc(eye1[0], eye1[1], s(5), 0, Math.PI * 2); g.stroke();
+      }
     }
 
-    // Nosek + kły Wampira / szew Zombie
-    g.fillStyle = "#eb7882";
-    g.beginPath(); g.arc(cx + d * s(3), cy + s(1), s(2.2), 0, Math.PI * 2); g.fill();
+    // Nosek + szczegóły twarzy
+    if (skinId === "klaun") {
+      g.fillStyle = "#eb232d"; g.beginPath(); g.arc(cx + d * s(3), cy + s(1), s(4.8), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "balwan") {
+      g.fillStyle = "#f58220"; g.beginPath(); g.moveTo(cx + d * s(3), cy - s(1)); g.lineTo(cx + d * s(12), cy + s(2)); g.lineTo(cx + d * s(3), cy + s(4)); g.closePath(); g.fill();
+    } else {
+      g.fillStyle = "#eb7882"; g.beginPath(); g.arc(cx + d * s(3), cy + s(1), s(2.2), 0, Math.PI * 2); g.fill();
+    }
     if (skinId === "wampir") {
       g.fillStyle = "#fff";
       g.beginPath(); g.moveTo(cx - s(2), cy + s(3)); g.lineTo(cx, cy + s(8)); g.lineTo(cx + s(2), cy + s(3)); g.fill();
       g.beginPath(); g.moveTo(cx + s(4), cy + s(3)); g.lineTo(cx + s(6), cy + s(8)); g.lineTo(cx + s(8), cy + s(3)); g.fill();
+    } else if (skinId === "rekin") {
+      g.fillStyle = "#fff";
+      for (const tx of [-4, 0, 4]) { g.beginPath(); g.moveTo(cx + s(tx), cy + s(4)); g.lineTo(cx + s(tx + 2), cy + s(8)); g.lineTo(cx + s(tx + 4), cy + s(4)); g.fill(); }
+    } else if (skinId === "kotek") {
+      g.strokeStyle = "#462d1c"; g.lineWidth = s(1.2);
+      for (const side of [-1, 1]) {
+        g.beginPath(); g.moveTo(cx + side * s(8), cy + s(1)); g.lineTo(cx + side * s(18), cy - s(1)); g.moveTo(cx + side * s(8), cy + s(4)); g.lineTo(cx + side * s(18), cy + s(5)); g.stroke();
+      }
     } else if (skinId === "zombie") {
       g.strokeStyle = "#4b2d32"; g.lineWidth = s(1.8);
       g.beginPath(); g.moveTo(cx - s(8), cy - s(11)); g.lineTo(cx + s(6), cy - s(10)); g.stroke();
@@ -836,6 +938,108 @@
       g.fill(); g.stroke();
       g.beginPath(); g.moveTo(cx - s(17), topY + s(2)); g.lineTo(cx - s(13), topY + s(2)); g.moveTo(cx - s(15), topY); g.lineTo(cx - s(15), topY + s(4)); g.stroke();
       g.beginPath(); g.moveTo(cx + s(14), topY); g.lineTo(cx + s(18), topY); g.moveTo(cx + s(16), topY - s(2)); g.lineTo(cx + s(16), topY + s(2)); g.stroke();
+    } else if (skinId === "policjant") {
+      g.fillStyle = "#20346c";
+      g.beginPath(); g.moveTo(cx - s(15), topY + s(4)); g.lineTo(cx + s(15), topY + s(4)); g.lineTo(cx + s(17), topY - s(5)); g.lineTo(cx - s(17), topY - s(5)); g.closePath(); g.fill();
+      g.fillStyle = "#14192a"; g.fillRect(cx - s(17), topY + s(2), s(34), s(4));
+      g.fillStyle = "#ffd43b"; g.beginPath(); g.arc(cx, topY - s(1), s(3.2), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "budowlaniec") {
+      g.fillStyle = "#fad228"; g.strokeStyle = "#af8a12"; g.lineWidth = s(1.8);
+      g.beginPath(); g.moveTo(cx - s(17), topY + s(4)); g.lineTo(cx - s(13), topY - s(6)); g.lineTo(cx, topY - s(9)); g.lineTo(cx + s(13), topY - s(6)); g.lineTo(cx + s(17), topY + s(4)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#ebbe1c"; g.fillRect(cx - s(19), topY + s(2), s(38), s(4));
+    } else if (skinId === "strazak") {
+      g.fillStyle = "#da2626"; g.strokeStyle = "#821414"; g.lineWidth = s(1.8);
+      g.beginPath(); g.moveTo(cx - s(18), topY + s(5)); g.lineTo(cx - s(13), topY - s(6)); g.lineTo(cx, topY - s(10)); g.lineTo(cx + s(13), topY - s(6)); g.lineTo(cx + s(18), topY + s(5)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#ffd43b"; g.fillRect(cx - s(4), topY - s(4), s(8), s(7));
+    } else if (skinId === "lekarz") {
+      g.fillStyle = "#fff"; g.fillRect(cx - s(15), topY + s(1), s(30), s(5));
+      g.beginPath(); g.arc(cx, topY - s(2), s(6), 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#b4becd"; g.lineWidth = s(1.2); g.stroke();
+      g.strokeStyle = "#e62a34"; g.lineWidth = s(2.2);
+      g.beginPath(); g.moveTo(cx - s(3), topY - s(2)); g.lineTo(cx + s(3), topY - s(2)); g.moveTo(cx, topY - s(5)); g.lineTo(cx, topY + s(1)); g.stroke();
+    } else if (skinId === "pilkarz") {
+      g.fillStyle = "#fff"; g.fillRect(cx - r + s(1), cy - s(11), r * 2 - s(2), s(5));
+      g.fillStyle = skin.accent; g.fillRect(cx - r + s(1), cy - s(8), r * 2 - s(2), s(2));
+    } else if (skinId === "klaun") {
+      g.fillStyle = "#f54b4b"; g.beginPath(); g.arc(cx - s(15), topY + s(4), s(5.5), 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#41affa"; g.beginPath(); g.arc(cx + s(15), topY + s(4), s(5.5), 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#ffd737"; g.beginPath(); g.arc(cx - s(12), topY - s(1), s(4), 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(cx + s(12), topY - s(1), s(4), 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#a548eb"; g.beginPath(); g.moveTo(cx - s(8), topY + s(3)); g.lineTo(cx + s(8), topY + s(3)); g.lineTo(cx, topY - s(10)); g.closePath(); g.fill();
+    } else if (skinId === "detektyw") {
+      g.fillStyle = "#7d5632"; g.strokeStyle = "#4e341c"; g.lineWidth = s(1.8);
+      g.beginPath(); g.ellipse(cx, topY, s(17), s(6), 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = "#694426"; g.fillRect(cx - s(20), topY + s(1), s(40), s(4));
+    } else if (skinId === "magik") {
+      g.fillStyle = "#1c1c24"; g.fillRect(cx - s(11), topY - s(13), s(22), s(16));
+      g.fillStyle = skin.accent; g.fillRect(cx - s(11), topY - s(2), s(22), s(4));
+      g.fillStyle = "#16161e"; g.fillRect(cx - s(17), topY + s(1), s(34), s(4));
+    } else if (skinId === "balwan") {
+      g.fillStyle = "#20222a"; g.fillRect(cx - s(10), topY - s(11), s(20), s(13));
+      g.fillStyle = "#16181e"; g.fillRect(cx - s(16), topY + s(1), s(32), s(4));
+    } else if (skinId === "mikolaj") {
+      g.fillStyle = "#dc232d";
+      g.beginPath(); g.moveTo(cx - s(15), topY + s(4)); g.lineTo(cx + s(15), topY + s(4)); g.lineTo(cx + d * s(12), topY - s(12)); g.closePath(); g.fill();
+      g.fillStyle = "#fff"; g.fillRect(cx - s(16), topY + s(1), s(32), s(5));
+      g.beginPath(); g.arc(cx + d * s(12), topY - s(11), s(4.5), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "pszczolka" || skinId === "biedronka") {
+      g.strokeStyle = "#23201e"; g.lineWidth = s(2); g.fillStyle = "#23201e";
+      for (const side of [-1, 1]) {
+        const ax = cx + side * s(8), ay = topY - s(9);
+        g.beginPath(); g.moveTo(cx + side * s(4), topY + s(2)); g.lineTo(ax, ay); g.stroke();
+        g.beginPath(); g.arc(ax, ay, s(3), 0, Math.PI * 2); g.fill();
+      }
+    } else if (skinId === "dynia") {
+      g.fillStyle = "#44a53a"; g.fillRect(cx - s(3), topY - s(9), s(6), s(11));
+      g.fillStyle = "#58c348"; g.beginPath(); g.ellipse(cx + s(5), topY - s(5), s(5), s(2.5), 0, 0, Math.PI * 2); g.fill();
+    } else if (skinId === "kaktus") {
+      g.fillStyle = skin.accent;
+      for (let a = 0; a < 360; a += 72) {
+        const rad = (a * Math.PI) / 180;
+        g.beginPath(); g.arc(cx + Math.cos(rad) * s(5), topY - s(4) + Math.sin(rad) * s(5), s(3.2), 0, Math.PI * 2); g.fill();
+      }
+      g.fillStyle = "#ffd43b"; g.beginPath(); g.arc(cx, topY - s(4), s(2.5), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "rekin") {
+      g.fillStyle = "#527696"; g.strokeStyle = "#2a445c"; g.lineWidth = s(1.8);
+      g.beginPath(); g.moveTo(cx - s(7), topY + s(4)); g.lineTo(cx + d * s(2), topY - s(13)); g.lineTo(cx + s(7), topY + s(4)); g.closePath(); g.fill(); g.stroke();
+    } else if (skinId === "gladiator") {
+      g.fillStyle = "#c39434"; g.strokeStyle = "#705218"; g.lineWidth = s(1.8);
+      g.beginPath(); g.moveTo(cx - s(16), topY + s(5)); g.lineTo(cx - s(12), topY - s(4)); g.lineTo(cx, topY - s(6)); g.lineTo(cx + s(12), topY - s(4)); g.lineTo(cx + s(16), topY + s(5)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#dc2a30"; g.beginPath(); g.ellipse(cx, topY - s(8), s(9), s(4.5), 0, 0, Math.PI * 2); g.fill();
+    } else if (skinId === "gamer" || skinId === "dj") {
+      g.strokeStyle = "#262a38"; g.lineWidth = s(3.5);
+      g.beginPath(); g.arc(cx, cy - s(2), r + s(2), Math.PI, 0); g.stroke();
+      for (const side of [-1, 1]) {
+        g.fillStyle = "#202430"; g.fillRect(cx + side * r - s(3), cy - s(7), s(6), s(13));
+        g.fillStyle = skin.accent; g.fillRect(cx + side * r - s(2), cy - s(5), s(4), s(9));
+      }
+      if (skinId === "gamer") {
+        g.strokeStyle = skin.accent; g.lineWidth = s(2);
+        g.beginPath(); g.moveTo(cx - d * r, cy + s(4)); g.lineTo(cx - d * s(4), cy + s(7)); g.stroke();
+      }
+    } else if (skinId === "jednorozec") {
+      g.fillStyle = "#ffd43b"; g.strokeStyle = "#b98a19"; g.lineWidth = s(1.2);
+      g.beginPath(); g.moveTo(cx - s(4), topY + s(3)); g.lineTo(cx + s(4), topY + s(3)); g.lineTo(cx + d * s(2), topY - s(14)); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = "#ff6ec3"; g.beginPath(); g.arc(cx - s(6), topY + s(2), s(3.5), 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#6ed7ff"; g.beginPath(); g.arc(cx + s(6), topY + s(2), s(3.5), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "faraon") {
+      g.fillStyle = "#ffd43b";
+      g.beginPath(); g.moveTo(cx - s(20), cy + s(4)); g.lineTo(cx - s(15), topY - s(5)); g.lineTo(cx + s(15), topY - s(5)); g.lineTo(cx + s(20), cy + s(4)); g.lineTo(cx + s(13), topY + s(5)); g.lineTo(cx - s(13), topY + s(5)); g.closePath(); g.fill();
+      g.strokeStyle = skin.accent; g.lineWidth = s(2.5);
+      g.beginPath(); g.moveTo(cx - s(14), topY - s(1)); g.lineTo(cx + s(14), topY - s(1)); g.moveTo(cx - s(16), topY + s(3)); g.lineTo(cx + s(16), topY + s(3)); g.stroke();
+      g.fillStyle = "#eb372d"; g.beginPath(); g.arc(cx, topY - s(6), s(3.5), 0, Math.PI * 2); g.fill();
+    } else if (skinId === "smok") {
+      g.fillStyle = "#ebcd69";
+      g.beginPath(); g.moveTo(cx - s(11), topY + s(3)); g.lineTo(cx - s(16), topY - s(11)); g.lineTo(cx - s(5), topY); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(cx + s(11), topY + s(3)); g.lineTo(cx + s(16), topY - s(11)); g.lineTo(cx + s(5), topY); g.closePath(); g.fill();
+      g.fillStyle = skin.accent; g.beginPath(); g.moveTo(cx - s(4), topY + s(2)); g.lineTo(cx, topY - s(9)); g.lineTo(cx + s(4), topY + s(2)); g.closePath(); g.fill();
+    } else if (skinId === "zloty") {
+      g.strokeStyle = "#fff596"; g.lineWidth = s(3);
+      g.beginPath(); g.ellipse(cx, topY - s(7), s(13), s(3.5), 0, 0, Math.PI * 2); g.stroke();
+    } else if (skinId === "galaktyka") {
+      g.strokeStyle = skin.accent; g.lineWidth = s(2.5);
+      g.beginPath(); g.ellipse(cx, topY + s(2), s(24), s(5), 0, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "#ffd43b"; g.beginPath(); g.arc(cx, topY - s(9), s(3.5), 0, Math.PI * 2); g.fill();
     }
     g.restore();
   }
@@ -1303,6 +1507,42 @@
     }
   }
 
+  function drawDetailedWeapon(g, cx, cy, ang, wid) {
+    const cosA = Math.cos(ang), sinA = Math.sin(ang);
+    const flip = cosA < 0 ? -1 : 1;
+    const px = -sinA * flip, py = cosA * flip;
+    const pt = (fwd, side = 0) => [cx + cosA * fwd + px * side, cy + sinA * fwd + py * side];
+    const seg = (col, lw, a, b) => {
+      g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round";
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    };
+    if (wid === "ziarna") {
+      seg("#734824", 5, pt(2, 4), pt(7, 9));
+      seg("#87562c", 8, pt(3), pt(22));
+      seg("#f5ce4e", 4, pt(8, -1), pt(23, -1));
+      g.fillStyle = "#44301c"; const m = pt(23); g.beginPath(); g.arc(m[0], m[1], 3.5, 0, Math.PI * 2); g.fill();
+    } else if (wid === "karabin") {
+      seg("#915c2e", 7, pt(-2, 1), pt(10, 1));
+      seg("#2c303a", 7, pt(8), pt(29));
+      seg("#788294", 2, pt(9, -2), pt(26, -2));
+      seg("#20232a", 4, pt(15, 2), pt(17, 9));
+      seg("#ffc346", 3, pt(28), pt(31));
+    } else if (wid === "shotgun") {
+      seg("#804a26", 8, pt(-1, 2), pt(10, 1));
+      seg("#343842", 9, pt(8), pt(27));
+      seg("#8c94a5", 2, pt(9, -2), pt(26, -2));
+      seg("#ee7d2a", 6, pt(13, 2), pt(21, 2));
+    } else if (wid === "awp") {
+      seg("#38763e", 8, pt(-2, 1), pt(22, 0));
+      seg("#5ca260", 2, pt(0, -2), pt(20, -2));
+      seg("#242830", 4, pt(20), pt(39));
+      seg("#181c23", 6, pt(37), pt(41));
+      seg("#1a1e26", 5, pt(7, -6), pt(22, -6));
+      const lens = pt(22, -6); g.fillStyle = "#5fdcff"; g.beginPath(); g.arc(lens[0], lens[1], 2, 0, Math.PI * 2); g.fill();
+      const tip = pt(41); g.fillStyle = "#ff3737"; g.beginPath(); g.arc(tip[0], tip[1], 2, 0, Math.PI * 2); g.fill();
+    }
+  }
+
   function drawFighter(p, isMe) {
     if (!p.alive) return;
     const cx = p.x - camX, cy = p.y - camY;
@@ -1314,14 +1554,19 @@
       ctx.lineTo(cx + Math.cos(p.aim) * 750, cy + Math.sin(p.aim) * 750); ctx.stroke();
     }
 
-    drawHamsterAvatar(ctx, cx, cy, p.skin_id, facingRight, p.aim || 0, 1.0);
+    // Miękki cień pod łapkami chomika
+    if (p.onGround) {
+      ctx.fillStyle = "rgba(18, 24, 38, 0.35)";
+      ctx.beginPath(); ctx.ellipse(cx, cy + 17, 17, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    }
 
-    // Broń
-    const ang = p.aim || 0;
-    const len = p.weapon_id === "awp" ? 34 : (p.weapon_id === "karabin" ? 26 : 22);
-    ctx.strokeStyle = p.weapon_id === "awp" ? "#3c7341" : (p.weapon_id === "ziarna" ? "#d4a238" : "#444a57");
-    ctx.lineWidth = p.weapon_id === "shotgun" ? 7 : 5;
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len); ctx.stroke();
+    drawHamsterAvatar(ctx, cx, cy, p.skin_id, facingRight, p.aim || 0, 1.0);
+    // Delikatny górny blik 3D na futerku
+    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.beginPath(); ctx.ellipse(cx - 3, cy - 9, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Szczegółowa broń
+    drawDetailedWeapon(ctx, cx, cy, p.aim || 0, p.weapon_id || "ziarna");
 
     if ((p.shield || p.shieldTimer || 0) > 0) {
       ctx.strokeStyle = "#5ad2ff"; ctx.lineWidth = 3;
@@ -1337,66 +1582,149 @@
     ctx.fillStyle = isMe ? "#ffd43b" : "#fff"; ctx.fillText(p.name, cx, cy - 47);
   }
 
+  function drawBgSunflower(sx, sy, sc, sway) {
+    const h = 46 * sc, hx = sx + sway, hy = sy - h;
+    ctx.strokeStyle = "#309438"; ctx.lineWidth = 4 * sc;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.fillStyle = "#42b248";
+    ctx.beginPath(); ctx.ellipse(sx - 7 * sc, sy - h * 0.5, 7 * sc, 3.5 * sc, -0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(sx + 8 * sc, sy - h * 0.54, 7 * sc, 3.5 * sc, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffd430";
+    for (let deg = 0; deg < 360; deg += 45) {
+      const rad = (deg * Math.PI) / 180;
+      ctx.beginPath(); ctx.arc(hx + Math.cos(rad) * 10 * sc, hy + Math.sin(rad) * 10 * sc, 5 * sc, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = "#5c3618"; ctx.beginPath(); ctx.arc(hx, hy, 8 * sc, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#845226"; ctx.beginPath(); ctx.arc(hx - 2 * sc, hy - 2 * sc, 3 * sc, 0, Math.PI * 2); ctx.fill();
+  }
+
   function draw() {
+    // 1. Niebo gradientowe + Słońce z poświatą
     const grad = ctx.createLinearGradient(0, 0, 0, SCREEN_H);
-    grad.addColorStop(0, "#64b9ff"); grad.addColorStop(1, "#b4e6ff");
+    grad.addColorStop(0, "#5cb4ff"); grad.addColorStop(1, "#bfe8ff");
     ctx.fillStyle = grad; ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
 
-    ctx.fillStyle = "#62c46d";
-    for (const [hx, hw, hh] of [[240, 220, 170], [680, 280, 220], [1180, 240, 180]]) {
-      ctx.beginPath(); ctx.ellipse(hx - camX, 800 - camY, hw, hh, 0, 0, Math.PI * 2); ctx.fill();
+    const sunX = 1360 - camX * 0.5, sunY = 125 - camY * 0.3;
+    ctx.fillStyle = "rgba(255,244,160,0.22)"; ctx.beginPath(); ctx.arc(sunX, sunY, 115, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(255,238,120,0.38)"; ctx.beginPath(); ctx.arc(sunX, sunY, 74, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffec69"; ctx.beginPath(); ctx.arc(sunX, sunY, 44, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fffab4"; ctx.beginPath(); ctx.arc(sunX - 10, sunY - 10, 20, 0, Math.PI * 2); ctx.fill();
+
+    // 1b. Odległe góry (paralaksa) + wzgórza Mario z kropkami + krzaczki
+    ctx.fillStyle = "#76c0a8";
+    for (const [mx, mw, mh] of [[160, 280, 290], [540, 340, 340], [1020, 310, 310], [1440, 290, 280]]) {
+      ctx.beginPath(); ctx.ellipse(mx - camX * 0.65, 800 - camY, mw, mh, 0, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    for (const [cx, cy] of [[220, 150], [580, 120], [950, 170], [1340, 135]]) {
-      ctx.beginPath(); ctx.ellipse(cx - camX, cy - camY, 48, 20, 0, 0, Math.PI * 2); ctx.fill();
+    for (const [hx, hw, hh] of [[240, 230, 185], [660, 300, 240], [1140, 255, 195], [1470, 220, 165]]) {
+      const bx = hx - camX * 0.85, by = 800 - camY;
+      ctx.fillStyle = "#4cb256"; ctx.beginPath(); ctx.ellipse(bx, by, hw, hh, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#68ce6c"; ctx.beginPath(); ctx.ellipse(bx, by + 6, hw - 18, hh - 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#84e284";
+      ctx.beginPath(); ctx.ellipse(bx - 20, by - hh + 56, 9, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx + 20, by - hh + 76, 8, 12, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // Płynące chmurki z cieniem
+    for (const [cx0, cy0, sc, spd] of [[180, 145, 1.0, 14], [520, 110, 1.2, 10], [880, 175, 0.9, 16], [1240, 125, 1.15, 12], [1520, 215, 0.85, 18]]) {
+      const cx = ((cx0 + elapsed * spd) % (WORLD_W + 180)) - 90 - camX * 0.75;
+      const cy = cy0 - camY * 0.5;
+      ctx.fillStyle = "rgba(205,232,250,0.85)"; ctx.beginPath(); ctx.ellipse(cx, cy + 7 * sc, 48 * sc, 15 * sc, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.ellipse(cx, cy, 46 * sc, 17 * sc, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx, cy - 10 * sc, 29 * sc, 19 * sc, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // Krzaczki i kołyszące się słoneczniki w tle
+    const groundY = (MAP_ROWS - 2) * TILE - camY;
+    for (const bx of [180, 440, 740, 960, 1220, 1410]) {
+      const gx = bx - camX;
+      ctx.fillStyle = "#34a244"; ctx.beginPath(); ctx.arc(gx - 18, groundY - 4, 18, 0, Math.PI * 2); ctx.arc(gx + 20, groundY - 4, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#42bc52"; ctx.beginPath(); ctx.arc(gx, groundY - 12, 24, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const [fx, fsc] of [[110, 1.0], [315, 0.85], [590, 1.1], [840, 0.9], [1030, 1.05], [1310, 0.95], [1490, 1.0]]) {
+      drawBgSunflower(fx - camX, groundY, fsc, Math.sin(elapsed * 2.2 + fx * 0.02) * 5 * fsc);
     }
 
+    // 2. Kafelki mapy 3D z cieniami, połyskiem i nitami
     for (const s of solids) {
       const dx = s.x - camX, dy = s.y - camY;
       if (dx < -TILE || dx > SCREEN_W || dy < -TILE || dy > SCREEN_H) continue;
       if (s.ch === "#") {
-        ctx.fillStyle = "#915c34"; ctx.fillRect(dx, dy, TILE, TILE);
-        if (s.r === MAP_ROWS - 2) { ctx.fillStyle = "#44c04a"; ctx.fillRect(dx, dy, TILE, 10); }
-        ctx.strokeStyle = "#6a4122"; ctx.lineWidth = 1; ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#865430"; ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#966038"; ctx.fillRect(dx + 3, dy + 3, TILE - 6, TILE - 6);
+        ctx.fillStyle = "#6e4224"; ctx.beginPath(); ctx.arc(dx + 12, dy + 22, 3.5, 0, Math.PI * 2); ctx.arc(dx + 28, dy + 28, 4, 0, Math.PI * 2); ctx.fill();
+        if (s.r === MAP_ROWS - 2) {
+          ctx.fillStyle = "#36b23e"; ctx.fillRect(dx, dy, TILE, 12);
+          ctx.fillStyle = "#6ae060"; ctx.fillRect(dx, dy, TILE, 5);
+        }
+        ctx.strokeStyle = "#5c361c"; ctx.lineWidth = 1.5; ctx.strokeRect(dx, dy, TILE, TILE);
       } else if (s.ch === "B") {
-        ctx.fillStyle = "#c66234"; ctx.fillRect(dx, dy, TILE, TILE);
-        ctx.strokeStyle = "#6e3018"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "rgba(15,25,45,0.22)"; ctx.fillRect(dx + 3, dy + TILE, TILE, 7);
+        ctx.fillStyle = "#be5a2e"; ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#d66c3a"; ctx.fillRect(dx + 2, dy + 2, 16, 16); ctx.fillRect(dx + 22, dy + 2, 16, 16);
+        ctx.fillRect(dx + 11, dy + 22, 18, 16);
+        ctx.fillStyle = "#f29862"; ctx.fillRect(dx + 2, dy + 2, 16, 2); ctx.fillRect(dx + 22, dy + 2, 16, 2); ctx.fillRect(dx + 11, dy + 22, 18, 2);
+        ctx.strokeStyle = "#52200e"; ctx.lineWidth = 2;
+        ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.beginPath(); ctx.moveTo(dx, dy + 20); ctx.lineTo(dx + TILE, dy + 20); ctx.moveTo(dx + 20, dy); ctx.lineTo(dx + 20, dy + 20);
+        ctx.moveTo(dx + 10, dy + 20); ctx.lineTo(dx + 10, dy + TILE); ctx.moveTo(dx + 30, dy + 20); ctx.lineTo(dx + 30, dy + TILE); ctx.stroke();
       } else if (s.ch === "P") {
-        ctx.fillStyle = "#2eb242"; ctx.fillRect(dx, dy, TILE, TILE);
-        ctx.fillStyle = "#6ee876"; ctx.fillRect(dx + 5, dy, 8, TILE);
-        ctx.strokeStyle = "#12561e"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#1c842c"; ctx.fillRect(dx, dy, 6, TILE);
+        ctx.fillStyle = "#3ec64c"; ctx.fillRect(dx + 6, dy, 7, TILE);
+        ctx.fillStyle = "#94f894"; ctx.fillRect(dx + 13, dy, 6, TILE);
+        ctx.fillStyle = "#34b844"; ctx.fillRect(dx + 19, dy, 10, TILE);
+        ctx.fillStyle = "#186622"; ctx.fillRect(dx + 29, dy, 11, TILE);
+        ctx.strokeStyle = "#0e4818"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
+        if (s.r > 0 && LAYOUT[s.r - 1][s.c] !== "P") {
+          ctx.fillStyle = "#30bc44"; ctx.fillRect(dx - 4, dy, TILE + 8, 13);
+          ctx.fillStyle = "#94f894"; ctx.fillRect(dx + 10, dy + 2, 7, 9);
+          ctx.strokeStyle = "#0e4818"; ctx.strokeRect(dx - 4, dy, TILE + 8, 13);
+        }
       } else if (s.ch === "?") {
         const cd = blockCooldowns[`${s.c},${s.r}`] || 0;
-        ctx.fillStyle = cd > 0 ? "#84705c" : "#f2c02a";
+        ctx.fillStyle = "rgba(15,25,45,0.22)"; ctx.fillRect(dx + 3, dy + TILE, TILE, 7);
+        ctx.fillStyle = cd > 0 ? "#7c6856" : "#f5c224";
         ctx.fillRect(dx, dy, TILE, TILE);
-        ctx.strokeStyle = "#8a5a10"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
         if (cd <= 0) {
-          ctx.fillStyle = "#733e0a"; ctx.font = "bold 24px Segoe UI"; ctx.textAlign = "center";
-          ctx.fillText("?", dx + 20, dy + 29);
+          ctx.fillStyle = "#fff296"; ctx.fillRect(dx + 3, dy + 3, TILE - 6, 7);
+        }
+        ctx.fillStyle = "#6e440e";
+        for (const [nx, ny] of [[6, 6], [TILE - 6, 6], [6, TILE - 6], [TILE - 6, TILE - 6]]) {
+          ctx.beginPath(); ctx.arc(dx + nx, dy + ny, 2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = cd > 0 ? "#44362a" : "#94580c"; ctx.lineWidth = 2.5; ctx.strokeRect(dx, dy, TILE, TILE);
+        if (cd <= 0) {
+          ctx.font = "bold 24px Segoe UI"; ctx.textAlign = "center";
+          ctx.fillStyle = "#824408"; ctx.fillText("?", dx + 22, dy + 30);
+          ctx.fillStyle = "#fffbe1"; ctx.fillText("?", dx + 20, dy + 28);
         }
       }
     }
 
     for (const sp of springs) {
       const dx = sp.x - camX, dy = sp.y - camY;
-      ctx.fillStyle = "#f5e8c8"; ctx.fillRect(dx + sp.w / 2 - 6, dy + 8, 12, sp.h - 8);
-      ctx.fillStyle = "#e83038";
-      ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 7, sp.w / 2 + 4, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#f5e8c8"; ctx.fillRect(dx + sp.w / 2 - 7, dy + 8, 14, sp.h - 8);
+      ctx.fillStyle = "#e42a34"; ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 7, sp.w / 2 + 5, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fa5c60"; ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 4, sp.w / 2 - 2, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(dx + 6, dy + 7, 2.8, 0, Math.PI * 2); ctx.arc(dx + sp.w / 2, dy + 5, 3, 0, Math.PI * 2); ctx.arc(dx + sp.w - 6, dy + 7, 2.8, 0, Math.PI * 2); ctx.fill();
     }
 
     for (const seed of activeSeeds) {
       const sx = seed.x - camX, sy = seed.y - camY + Math.sin(elapsed * 5 + seed.id) * 3;
+      ctx.fillStyle = "rgba(255,225,80,0.32)"; ctx.beginPath(); ctx.arc(sx, sy, 13 + Math.sin(elapsed * 7 + seed.id) * 2, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#41372d"; ctx.beginPath(); ctx.ellipse(sx, sy, 6, 9, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#f0e1be"; ctx.beginPath(); ctx.ellipse(sx, sy, 2.5, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sx - 2, sy - 4, 1.8, 0, Math.PI * 2); ctx.fill();
     }
 
     const pupCols = { speed: "#ffdc32", shield: "#46beff", heal: "#ff556e", damage: "#c85aff" };
     const pupTxt = { speed: "S", shield: "T", heal: "+", damage: "2x" };
     for (const pup of activePowerups) {
       const px = pup.x - camX, py = pup.y - camY + Math.sin(elapsed * 6 + pup.id) * 4;
+      ctx.fillStyle = "rgba(255,255,255,0.28)"; ctx.beginPath(); ctx.arc(px, py, 20 + Math.sin(elapsed * 7) * 2, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = pupCols[pup.kind] || "#fff";
       ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.beginPath(); ctx.ellipse(px - 2, py - 8, 6, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = "#111"; ctx.font = "bold 14px Segoe UI"; ctx.textAlign = "center";
       ctx.fillText(pupTxt[pup.kind] || "?", px, py + 5);
     }

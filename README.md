@@ -5,7 +5,7 @@ Platformowa strzelanka 2D w stylu Mario z **trybem Singleplayer (7 botów + 3 bo
 ## Funkcje gry
 - **Cel gry:** Zbieraj ziarna słonecznika (cel rundy: 50 ziaren) i walcz o 1. miejsce w rankingu.
 - **Sterowanie:** `A`/`D` (bieg), `W`/`Spacja` (skok i **podwójny skok**), **Myszka + LPM** (celowanie 360° i strzał), `1`–`4`/kółko (Ziarna, Karabin, Shotgun, AWP), `E` (rozmowa z NPC), `B` (Sklep), `ESC` (Menu), `M` (dźwięk).
-- **22 skórki chomików:** kupione skórki zapisują się na stałe! Bronie (Karabin, Shotgun, AWP) działają na jedną rundę.
+- **50 skórek chomików:** kupione skórki zapisują się na stałe! Bronie (Karabin, Shotgun, AWP) działają na jedną rundę.
 - **3 poziomy trudności** (Łatwy, Normalny, Trudny) + **własny nick gracza**.
 - **Multiplayer Online (Cross-Play!):** graj z kolegami przez przeglądarkę albo w aplikacji Python Pygame-ce w tym samym pokoju!
 

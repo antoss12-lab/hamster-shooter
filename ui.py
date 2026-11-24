@@ -34,8 +34,15 @@ from entities import draw_hamster_avatar
 
 
 def draw_panel(surf: pygame.Surface, rect: pygame.Rect, alpha: int = 215, border_col=GOLD):
+    # Subtelny cień pod panelem UI dla efektu głębi
+    shadow = pygame.Surface((rect.w, rect.h), pygame.SRCALPHA)
+    pygame.draw.rect(shadow, (6, 10, 18, 110), (0, 0, rect.w, rect.h), border_radius=12)
+    surf.blit(shadow, (rect.x + 3, rect.y + 4))
+
     panel = pygame.Surface((rect.w, rect.h), pygame.SRCALPHA)
     pygame.draw.rect(panel, (DARK_UI[0], DARK_UI[1], DARK_UI[2], alpha), (0, 0, rect.w, rect.h), border_radius=12)
+    # Delikatny górny blik na panelu
+    pygame.draw.rect(panel, (255, 255, 255, 18), (4, 3, rect.w - 8, min(14, rect.h // 3)), border_radius=8)
     pygame.draw.rect(panel, border_col, (0, 0, rect.w, rect.h), 2, border_radius=12)
     surf.blit(panel, rect.topleft)
 
@@ -71,18 +78,26 @@ def draw_hud(
     # --- 1. Lewy górny róg: Nick, HP, Ziarna, Sklep ---
     draw_panel(surf, pygame.Rect(14, 12, 294, 108), alpha=205, border_col=GOLD)
 
-    # Nick + Pasek HP
+    # Nick + Pasek HP z połyskiem arcade
     hp_txt = f_sm.render(f"{player.name}  —  HP: {player.hp} / {player.max_hp}", True, WHITE)
     surf.blit(hp_txt, (26, 20))
     bar_rect = pygame.Rect(26, 42, 268, 16)
     pygame.draw.rect(surf, (55, 25, 30), bar_rect, border_radius=6)
     ratio = max(0.0, player.hp / max(1, player.max_hp))
-    pygame.draw.rect(surf, GREEN if ratio > 0.35 else RED, (bar_rect.x, bar_rect.y, int(bar_rect.w * ratio), bar_rect.h), border_radius=6)
+    fill_w = int(bar_rect.w * ratio)
+    if fill_w > 0:
+        hp_col = GREEN if ratio > 0.35 else RED
+        hi_col = (135, 240, 150) if ratio > 0.35 else (255, 130, 130)
+        pygame.draw.rect(surf, hp_col, (bar_rect.x, bar_rect.y, fill_w, bar_rect.h), border_radius=6)
+        pygame.draw.rect(surf, hi_col, (bar_rect.x + 2, bar_rect.y + 2, max(2, fill_w - 4), 5), border_radius=3)
     pygame.draw.rect(surf, WHITE, bar_rect, 1, border_radius=6)
 
-    # Ziarna słonecznika (portfel + cel zwycięstwa)
-    seeds_txt = f_md.render(f"Ziarna: {player.seeds}   (Cel: {player.total_seeds}/{WIN_SEEDS_GOAL})", True, GOLD)
-    surf.blit(seeds_txt, (26, 66))
+    # Ikonka ziarna słonecznika + licznik ziaren
+    pygame.draw.ellipse(surf, (65, 55, 45), (27, 68, 12, 18))
+    pygame.draw.ellipse(surf, (240, 225, 190), (30, 70, 6, 14))
+    pygame.draw.ellipse(surf, GOLD, (26, 67, 14, 20), 1)
+    seeds_txt = f_md.render(f"Ziarna: {player.seeds}  (Cel: {player.total_seeds}/{WIN_SEEDS_GOAL})", True, GOLD)
+    surf.blit(seeds_txt, (46, 66))
 
     kills_txt = f_xs.render(f"Boty: {player.kills}  |  [ESC] Menu  |  [M] Dźwięk: {'ON' if sound_on else 'OFF'}", True, (215, 225, 240))
     surf.blit(kills_txt, (26, 94))

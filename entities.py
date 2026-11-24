@@ -80,12 +80,17 @@ class SunflowerSeed:
         sx = int(self.x - cam_x)
         sy = int(self.y - cam_y + bob)
 
-        # Złota poświata pod ziarnem
-        pygame.draw.circle(surf, (255, 235, 120), (sx, sy), 11, 2)
-        # Kształt ziarna słonecznika (pasiaste!)
+        # Pulsująca złota poświata + błysk pod ziarnem słonecznika
+        glow_r = 12 + int(math.sin(self.age * 7.0) * 2)
+        glow = pygame.Surface((glow_r * 2 + 4, glow_r * 2 + 4), pygame.SRCALPHA)
+        pygame.draw.circle(glow, (255, 225, 80, 75), (glow_r + 2, glow_r + 2), glow_r)
+        surf.blit(glow, (sx - glow_r - 2, sy - glow_r - 2))
+        pygame.draw.circle(surf, (255, 240, 130), (sx, sy), 11, 2)
+        # Kształt ziarna słonecznika (pasiaste z blikiem!)
         pygame.draw.ellipse(surf, SUNFLOWER_DARK, (sx - 6, sy - 9, 12, 18))
         pygame.draw.ellipse(surf, SUNFLOWER_LIGHT, (sx - 3, sy - 7, 6, 14))
         pygame.draw.line(surf, SUNFLOWER_DARK, (sx, sy - 8), (sx, sy + 8), 2)
+        pygame.draw.circle(surf, WHITE, (sx - 2, sy - 4), 2)
 
 
 class PowerUp:
@@ -126,8 +131,13 @@ class PowerUp:
         sy = int(self.y - cam_y + bob)
         col = info["color"]
 
+        # Świecąca aura i szklany połysk power-upa
+        glow = pygame.Surface((46, 46), pygame.SRCALPHA)
+        pygame.draw.circle(glow, (col[0], col[1], col[2], 70), (23, 23), 21 + int(math.sin(self.age * 7) * 2))
+        surf.blit(glow, (sx - 23, sy - 23))
         pygame.draw.circle(surf, WHITE, (sx, sy), 16)
         pygame.draw.circle(surf, col, (sx, sy), 14)
+        pygame.draw.ellipse(surf, (255, 255, 255), (sx - 8, sy - 12, 12, 5))
         pygame.draw.circle(surf, (30, 30, 40), (sx, sy), 16, 2)
         txt = font.render(info["symbol"], True, (20, 20, 28))
         surf.blit(txt, (sx - txt.get_width() // 2, sy - txt.get_height() // 2))
@@ -171,22 +181,75 @@ def draw_hamster_avatar(
         if skin_id == "wampir":
             pygame.draw.polygon(surf, accent, cape_pts, 2)
 
-    # Uszka chomika
+    # Uszka chomika (specjalne kształty dla kota, psa, królika, pandy!)
     ear_off_x = s(10)
     ear_off_y = s(13)
     ear_r = s(6)
     ear_outer = (32, 34, 40) if skin_id == "panda" else body_col
-    for ex in (cx - ear_off_x, cx + ear_off_x):
-        pygame.draw.circle(surf, ear_outer, (ex, cy - ear_off_y), ear_r)
-        pygame.draw.circle(surf, ear_col, (ex, cy - ear_off_y), max(2, s(3.5)))
-        pygame.draw.circle(surf, (40, 30, 25), (ex, cy - ear_off_y), ear_r, 1)
+    if hat_override is None and skin_id == "kroliczek":
+        # Długie stojące uszy królika!
+        for side in (-1, 1):
+            ex = cx + side * s(8)
+            pygame.draw.ellipse(surf, body_col, (ex - s(4), cy - r - s(16), s(8), s(20)))
+            pygame.draw.ellipse(surf, ear_col, (ex - s(2), cy - r - s(13), s(4), s(14)))
+            pygame.draw.ellipse(surf, (40, 30, 25), (ex - s(4), cy - r - s(16), s(8), s(20)), 1)
+    elif hat_override is None and skin_id == "kotek":
+        # Spiczaste kocie uszka!
+        for side in (-1, 1):
+            pts = [(cx + side * s(14), cy - s(9)), (cx + side * s(11), cy - r - s(8)), (cx + side * s(4), cy - s(14))]
+            pygame.draw.polygon(surf, body_col, pts)
+            pygame.draw.polygon(surf, (40, 30, 25), pts, 1)
+    elif hat_override is None and skin_id == "piesek":
+        # Klapnięte uszka pieska po bokach!
+        for side in (-1, 1):
+            pygame.draw.ellipse(surf, ear_col, (cx + side * s(14) - s(4), cy - s(8), s(8), s(17)))
+            pygame.draw.ellipse(surf, (40, 30, 25), (cx + side * s(14) - s(4), cy - s(8), s(8), s(17)), 1)
+    elif hat_override is None and skin_id == "pszczolka":
+        # Małe białe skrzydełka pszczółki za plecami
+        pygame.draw.ellipse(surf, (230, 248, 255), (cx - d * s(21) - s(4), cy - s(9), s(13), s(9)))
+        pygame.draw.ellipse(surf, (150, 195, 225), (cx - d * s(21) - s(4), cy - s(9), s(13), s(9)), 1)
+        for ex in (cx - ear_off_x, cx + ear_off_x):
+            pygame.draw.circle(surf, ear_outer, (ex, cy - ear_off_y), ear_r)
+            pygame.draw.circle(surf, ear_col, (ex, cy - ear_off_y), max(2, s(3.5)))
+    else:
+        for ex in (cx - ear_off_x, cx + ear_off_x):
+            pygame.draw.circle(surf, ear_outer, (ex, cy - ear_off_y), ear_r)
+            pygame.draw.circle(surf, ear_col, (ex, cy - ear_off_y), max(2, s(3.5)))
+            pygame.draw.circle(surf, (40, 30, 25), (ex, cy - ear_off_y), ear_r, 1)
 
-    # Okrągłe puszyste ciałko
+    # Okrągłe puszyste ciałko z subtelnym cieniowaniem 3D i górnym blikiem!
     pygame.draw.circle(surf, body_col, (cx, cy), r)
+    hi_col = (min(255, body_col[0] + 28), min(255, body_col[1] + 28), min(255, body_col[2] + 28))
+    pygame.draw.ellipse(surf, hi_col, (cx - s(10), cy - s(13), s(16), s(8)))
     # Jasny brzuszek
     pygame.draw.ellipse(surf, belly_col, (cx - s(10), cy + s(1), s(20), s(14)))
+
+    # Specjalne wzory na futerku (pszczółka, biedronka, mumia, galaktyka, kaktus)
+    if hat_override is None:
+        if skin_id == "pszczolka":
+            pygame.draw.line(surf, (35, 32, 28), (cx - s(14), cy + s(3)), (cx + s(14), cy + s(3)), max(2, s(3)))
+            pygame.draw.line(surf, (35, 32, 28), (cx - s(11), cy + s(10)), (cx + s(11), cy + s(10)), max(2, s(3)))
+        elif skin_id == "biedronka":
+            for dx_dot, dy_dot in ((-9, 4), (9, 5), (0, 10), (-6, 11), (6, -10)):
+                pygame.draw.circle(surf, (28, 28, 32), (cx + s(dx_dot), cy + s(dy_dot)), max(2, s(2.4)))
+        elif skin_id == "mumia":
+            for my_off in (-8, -1, 6, 12):
+                pygame.draw.line(surf, (165, 152, 125), (cx - s(14), cy + s(my_off)), (cx + s(14), cy + s(my_off - 2)), max(1, s(2)))
+        elif skin_id == "galaktyka":
+            for sx_off, sy_off in ((-9, -6), (8, -9), (-5, 9), (9, 6), (2, -12)):
+                pygame.draw.circle(surf, (240, 245, 255), (cx + s(sx_off), cy + s(sy_off)), max(1, s(1.5)))
+        elif skin_id == "balwan":
+            # Zimowy czerwony szalik
+            pygame.draw.rect(surf, (220, 42, 52), (cx - s(13), cy + s(5), s(26), s(5)), border_radius=2)
+            pygame.draw.rect(surf, (220, 42, 52), (cx + d * s(6), cy + s(7), s(5), s(9)), border_radius=2)
+        elif skin_id == "kaktus":
+            # Małe kolce po bokach
+            for side in (-1, 1):
+                for ky in (-4, 3, 9):
+                    pygame.draw.line(surf, (225, 245, 195), (cx + side * r, cy + s(ky)), (cx + side * (r + s(4)), cy + s(ky - 1)), 2)
+
     # Obrys ciała
-    outline_col = (255, 255, 255) if skin_id == "diament" else (40, 30, 25)
+    outline_col = (255, 255, 255) if skin_id in ("diament", "galaktyka") else ((255, 240, 130) if skin_id == "zloty" else (40, 30, 25))
     pygame.draw.circle(surf, outline_col, (cx, cy), r, 2)
 
     # Złota gwiazda na brzuszku Super-Chomika
@@ -225,27 +288,60 @@ def draw_hamster_avatar(
         if skin_id == "panda" and hat_override is None:
             for ex, ey in (eye1, eye2):
                 pygame.draw.circle(surf, (32, 34, 40), (ex, ey), max(3, s(5.2)))
+        elif skin_id == "piesek" and hat_override is None:
+            pygame.draw.circle(surf, (135, 82, 42), eye1, max(3, s(5.4)))
+        elif skin_id == "szkielet" and hat_override is None:
+            for ex, ey in (eye1, eye2):
+                pygame.draw.circle(surf, (25, 26, 32), (ex, ey), max(3, s(4.8)))
         elif skin_id == "superbohater" and hat_override is None:
             mask_r = pygame.Rect(cx - s(12), cy - s(8), s(24), s(8))
             pygame.draw.rect(surf, accent, mask_r, border_radius=4)
 
-        eye_col = (230, 35, 45) if skin_id == "wampir" else ((255, 235, 85) if skin_id == "duch" else (25, 22, 22))
+        eye_col = (
+            (230, 35, 45)
+            if skin_id == "wampir"
+            else (
+                (255, 235, 85)
+                if skin_id in ("duch", "dynia", "mumia")
+                else ((120, 235, 255) if skin_id == "galaktyka" else (25, 22, 22))
+            )
+        )
         for idx, (ex, ey) in enumerate((eye1, eye2)):
             er = max(2, s(3.8 if (skin_id == "zombie" and idx == 0) else 3.2))
             if skin_id == "pirat" and hat_override is None and idx == 1:
-                # Czarna opaska pirata na drugie oko
                 pygame.draw.line(surf, (25, 25, 30), (cx - r + 2, cy - s(9)), (cx + r - 2, cy - s(1)), 2)
                 pygame.draw.circle(surf, (25, 25, 30), (ex, ey), max(3, s(4.5)))
             else:
                 pygame.draw.circle(surf, eye_col, (ex + look_x // 2, ey + look_y // 2), er)
                 pygame.draw.circle(surf, WHITE, (ex + look_x // 2 - 1, ey + look_y // 2 - 1), max(1, s(1.2)))
+        if skin_id == "dj" and hat_override is None:
+            # Ciemne okulary przeciwsłoneczne DJ-a
+            pygame.draw.rect(surf, (22, 24, 34), (cx - s(12), cy - s(8), s(11), s(7)), border_radius=2)
+            pygame.draw.rect(surf, (22, 24, 34), (cx + s(1), cy - s(8), s(11), s(7)), border_radius=2)
+            pygame.draw.line(surf, accent, (cx - s(12), cy - s(6)), (cx + s(12), cy - s(6)), 2)
+        elif skin_id == "detektyw" and hat_override is None:
+            # Złoty monokl detektywa
+            pygame.draw.circle(surf, GOLD, eye1, max(3, s(5)), 2)
 
-    # Nosek + kły Wampira / szew Zombie
+    # Nosek + kły Wampira / szew Zombie / nos Klauna / marchewka Bałwanka / wąsiki Kotka / ząbki Rekina
     nose = (cx + d * s(3), cy + s(1))
-    pygame.draw.circle(surf, (235, 120, 130), nose, max(2, s(2.2)))
+    if hat_override is None and skin_id == "klaun":
+        pygame.draw.circle(surf, (235, 35, 45), nose, max(3, s(4.8)))
+    elif hat_override is None and skin_id == "balwan":
+        pygame.draw.polygon(surf, (245, 130, 32), [(nose[0], nose[1] - s(2)), (nose[0] + d * s(9), nose[1] + s(1)), (nose[0], nose[1] + s(3))])
+    else:
+        pygame.draw.circle(surf, (235, 120, 130), nose, max(2, s(2.2)))
+
     if hat_override is None and skin_id == "wampir":
         pygame.draw.polygon(surf, WHITE, [(cx - s(2), cy + s(3)), (cx, cy + s(8)), (cx + s(2), cy + s(3))])
         pygame.draw.polygon(surf, WHITE, [(cx + s(4), cy + s(3)), (cx + s(6), cy + s(8)), (cx + s(8), cy + s(3))])
+    elif hat_override is None and skin_id == "rekin":
+        for tx_off in (-4, 0, 4):
+            pygame.draw.polygon(surf, WHITE, [(cx + s(tx_off), cy + s(4)), (cx + s(tx_off + 2), cy + s(8)), (cx + s(tx_off + 4), cy + s(4))])
+    elif hat_override is None and skin_id == "kotek":
+        for side in (-1, 1):
+            pygame.draw.line(surf, (70, 45, 28), (cx + side * s(8), cy + s(1)), (cx + side * s(18), cy - s(1)), 1)
+            pygame.draw.line(surf, (70, 45, 28), (cx + side * s(8), cy + s(4)), (cx + side * s(18), cy + s(5)), 1)
     elif hat_override is None and skin_id == "zombie":
         pygame.draw.line(surf, (75, 45, 50), (cx - s(8), cy - s(11)), (cx + s(6), cy - s(10)), 2)
         for sx_off in (-5, -1, 3):
@@ -398,6 +494,112 @@ def draw_hamster_avatar(
         pygame.draw.line(surf, WHITE, (cx - s(15), top_y), (cx - s(15), top_y + s(4)), 2)
         pygame.draw.line(surf, WHITE, (cx + s(14), top_y), (cx + s(18), top_y), 2)
         pygame.draw.line(surf, WHITE, (cx + s(16), top_y - s(2)), (cx + s(16), top_y + s(2)), 2)
+    # --- 28 nowych czapek i dodatków (łącznie 50 skórek!) ---
+    elif skin_id == "policjant":
+        cap = [(cx - s(15), top_y + s(4)), (cx + s(15), top_y + s(4)), (cx + s(17), top_y - s(5)), (cx - s(17), top_y - s(5))]
+        pygame.draw.polygon(surf, (32, 52, 108), cap)
+        pygame.draw.rect(surf, (20, 25, 42), (cx - s(17), top_y + s(2), s(34), s(4)), border_radius=2)
+        pygame.draw.circle(surf, GOLD, (cx, top_y - s(1)), max(2, s(3.2)))
+    elif skin_id == "budowlaniec":
+        helmet = [(cx - s(17), top_y + s(4)), (cx - s(13), top_y - s(6)), (cx, top_y - s(9)), (cx + s(13), top_y - s(6)), (cx + s(17), top_y + s(4))]
+        pygame.draw.polygon(surf, (250, 210, 40), helmet)
+        pygame.draw.polygon(surf, (175, 138, 18), helmet, 2)
+        pygame.draw.rect(surf, (235, 190, 28), (cx - s(19), top_y + s(2), s(38), s(4)), border_radius=2)
+    elif skin_id == "strazak":
+        helmet = [(cx - s(18), top_y + s(5)), (cx - s(13), top_y - s(6)), (cx, top_y - s(10)), (cx + s(13), top_y - s(6)), (cx + s(18), top_y + s(5))]
+        pygame.draw.polygon(surf, (218, 38, 38), helmet)
+        pygame.draw.polygon(surf, (130, 20, 20), helmet, 2)
+        pygame.draw.rect(surf, GOLD, (cx - s(4), top_y - s(4), s(8), s(7)), border_radius=2)
+    elif skin_id == "lekarz":
+        pygame.draw.rect(surf, WHITE, (cx - s(15), top_y + s(1), s(30), s(5)), border_radius=2)
+        pygame.draw.circle(surf, WHITE, (cx, top_y - s(2)), max(4, s(6)))
+        pygame.draw.circle(surf, (180, 190, 205), (cx, top_y - s(2)), max(4, s(6)), 1)
+        pygame.draw.line(surf, (230, 42, 52), (cx - s(3), top_y - s(2)), (cx + s(3), top_y - s(2)), 2)
+        pygame.draw.line(surf, (230, 42, 52), (cx, top_y - s(5)), (cx, top_y + s(1)), 2)
+    elif skin_id == "pilkarz":
+        pygame.draw.rect(surf, WHITE, (cx - r + 1, cy - s(11), r * 2 - 2, s(5)), border_radius=2)
+        pygame.draw.rect(surf, accent, (cx - r + 1, cy - s(8), r * 2 - 2, s(2)))
+    elif skin_id == "klaun":
+        for side, col in ((-1, (245, 75, 75)), (1, (65, 175, 250))):
+            pygame.draw.circle(surf, col, (cx + side * s(15), top_y + s(4)), max(3, s(5.5)))
+            pygame.draw.circle(surf, (255, 215, 55), (cx + side * s(12), top_y - s(1)), max(2, s(4)))
+        pygame.draw.polygon(surf, (165, 72, 235), [(cx - s(8), top_y + s(3)), (cx + s(8), top_y + s(3)), (cx, top_y - s(10))])
+    elif skin_id == "detektyw":
+        pygame.draw.ellipse(surf, (125, 86, 50), (cx - s(17), top_y - s(6), s(34), s(12)))
+        pygame.draw.ellipse(surf, (78, 52, 28), (cx - s(17), top_y - s(6), s(34), s(12)), 2)
+        pygame.draw.rect(surf, (105, 68, 38), (cx - s(20), top_y + s(1), s(40), s(4)), border_radius=2)
+    elif skin_id == "magik":
+        pygame.draw.rect(surf, (28, 28, 36), (cx - s(11), top_y - s(13), s(22), s(16)), border_radius=2)
+        pygame.draw.rect(surf, accent, (cx - s(11), top_y - s(2), s(22), s(4)))
+        pygame.draw.rect(surf, (22, 22, 30), (cx - s(17), top_y + s(1), s(34), s(4)), border_radius=2)
+    elif skin_id == "balwan":
+        pygame.draw.rect(surf, (32, 34, 42), (cx - s(10), top_y - s(11), s(20), s(13)), border_radius=2)
+        pygame.draw.rect(surf, (22, 24, 30), (cx - s(16), top_y + s(1), s(32), s(4)), border_radius=2)
+    elif skin_id == "mikolaj":
+        pts = [(cx - s(15), top_y + s(4)), (cx + s(15), top_y + s(4)), (cx + d * s(12), top_y - s(12))]
+        pygame.draw.polygon(surf, (220, 35, 45), pts)
+        pygame.draw.rect(surf, WHITE, (cx - s(16), top_y + s(1), s(32), s(5)), border_radius=3)
+        pygame.draw.circle(surf, WHITE, (cx + d * s(12), top_y - s(11)), max(3, s(4.5)))
+    elif skin_id in ("pszczolka", "biedronka"):
+        for side in (-1, 1):
+            ax = cx + side * s(8)
+            ay = top_y - s(9)
+            pygame.draw.line(surf, (35, 32, 30), (cx + side * s(4), top_y + s(2)), (ax, ay), 2)
+            pygame.draw.circle(surf, (35, 32, 30), (ax, ay), max(2, s(3)))
+    elif skin_id == "dynia":
+        pygame.draw.rect(surf, (68, 165, 58), (cx - s(3), top_y - s(9), s(6), s(11)), border_radius=2)
+        pygame.draw.ellipse(surf, (88, 195, 72), (cx + s(1), top_y - s(7), s(9), s(5)))
+    elif skin_id == "kaktus":
+        # Różowy kwiatek na czubku kaktusa
+        for ang_deg in range(0, 360, 72):
+            fx = cx + int(math.cos(math.radians(ang_deg)) * s(5))
+            fy = top_y - s(4) + int(math.sin(math.radians(ang_deg)) * s(5))
+            pygame.draw.circle(surf, accent, (fx, fy), max(2, s(3.2)))
+        pygame.draw.circle(surf, GOLD, (cx, top_y - s(4)), max(2, s(2.5)))
+    elif skin_id == "rekin":
+        # Płetwa rekina na głowie
+        fin = [(cx - s(7), top_y + s(4)), (cx + d * s(2), top_y - s(13)), (cx + s(7), top_y + s(4))]
+        pygame.draw.polygon(surf, (82, 118, 150), fin)
+        pygame.draw.polygon(surf, (42, 68, 92), fin, 2)
+    elif skin_id == "gladiator":
+        dome = [(cx - s(16), top_y + s(5)), (cx - s(12), top_y - s(4)), (cx, top_y - s(6)), (cx + s(12), top_y - s(4)), (cx + s(16), top_y + s(5))]
+        pygame.draw.polygon(surf, (195, 148, 52), dome)
+        pygame.draw.polygon(surf, (112, 82, 24), dome, 2)
+        pygame.draw.ellipse(surf, (220, 42, 48), (cx - s(9), top_y - s(13), s(18), s(9)))
+    elif skin_id in ("gamer", "dj"):
+        # Słuchawki nauszne z pałąkiem (RGB dla Gamera, neonowe dla DJ-a)
+        pygame.draw.arc(surf, (38, 42, 56), (cx - r - s(2), cy - r - s(5), (r + s(2)) * 2, (r + s(2)) * 2), 0.1, math.pi - 0.1, max(3, s(4)))
+        for side in (-1, 1):
+            pygame.draw.rect(surf, (32, 36, 48), (cx + side * r - s(3), cy - s(7), s(6), s(13)), border_radius=3)
+            pygame.draw.rect(surf, accent, (cx + side * r - s(2), cy - s(5), s(4), s(9)), border_radius=2)
+        if skin_id == "gamer":
+            pygame.draw.line(surf, accent, (cx - d * r, cy + s(4)), (cx - d * s(4), cy + s(7)), 2)
+    elif skin_id == "jednorozec":
+        # Złoty spiralny róg jednorożca + tęczowa grzywka
+        horn = [(cx - s(4), top_y + s(3)), (cx + s(4), top_y + s(3)), (cx + d * s(2), top_y - s(14))]
+        pygame.draw.polygon(surf, GOLD, horn)
+        pygame.draw.polygon(surf, (185, 138, 25), horn, 1)
+        pygame.draw.circle(surf, (255, 110, 195), (cx - s(6), top_y + s(2)), max(2, s(3.5)))
+        pygame.draw.circle(surf, (110, 215, 255), (cx + s(6), top_y + s(2)), max(2, s(3.5)))
+    elif skin_id == "faraon":
+        # Egipskie nakrycie Nemes (złoto-niebieskie paski) + złota kobra
+        nemes = [(cx - s(20), cy + s(4)), (cx - s(15), top_y - s(5)), (cx + s(15), top_y - s(5)), (cx + s(20), cy + s(4)), (cx + s(13), top_y + s(5)), (cx - s(13), top_y + s(5))]
+        pygame.draw.polygon(surf, GOLD, nemes)
+        pygame.draw.line(surf, accent, (cx - s(14), top_y - s(1)), (cx + s(14), top_y - s(1)), max(2, s(3)))
+        pygame.draw.line(surf, accent, (cx - s(16), top_y + s(3)), (cx + s(16), top_y + s(3)), max(2, s(2)))
+        pygame.draw.circle(surf, (235, 55, 45), (cx, top_y - s(6)), max(2, s(3.5)))
+    elif skin_id == "smok":
+        # Dwa smocze rogi + czerwone kolce na czubku
+        pygame.draw.polygon(surf, (235, 205, 105), [(cx - s(11), top_y + s(3)), (cx - s(16), top_y - s(11)), (cx - s(5), top_y)])
+        pygame.draw.polygon(surf, (235, 205, 105), [(cx + s(11), top_y + s(3)), (cx + s(16), top_y - s(11)), (cx + s(5), top_y)])
+        pygame.draw.polygon(surf, accent, [(cx - s(4), top_y + s(2)), (cx, top_y - s(9)), (cx + s(4), top_y + s(2))])
+    elif skin_id == "zloty":
+        # Lśniąca złota aureola nad głową!
+        pygame.draw.ellipse(surf, (255, 245, 150), (cx - s(13), top_y - s(10), s(26), s(7)), max(2, s(3)))
+    elif skin_id == "galaktyka":
+        # Pierścień Saturna wokół głowy + świecąca gwiazdka!
+        pygame.draw.ellipse(surf, accent, (cx - s(24), top_y - s(3), s(48), s(10)), max(2, s(2.5)))
+        pygame.draw.circle(surf, GOLD, (cx, top_y - s(9)), max(2, s(3.5)))
 
 
 class Hamster:
@@ -857,6 +1059,12 @@ class Hamster:
         # Efekt migania podczas nietykalności po odrodzeniu
         if self.invuln_timer > 0 and int(self.invuln_timer * 14) % 2 == 0:
             return
+
+        # Miękki cień pod łapkami chomika (gdy stoi na platformie!)
+        if self.on_ground:
+            sh = pygame.Surface((36, 10), pygame.SRCALPHA)
+            pygame.draw.ellipse(sh, (18, 24, 38, 95), (0, 0, 36, 10))
+            surf.blit(sh, (cx - 18, cy + 13))
 
         bob = abs(math.sin(self.walk_phase)) * -3.5 if self.on_ground else 0.0
         body_col = WHITE if self.hurt_flash > 0 else self.body_override

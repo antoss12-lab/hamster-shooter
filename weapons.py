@@ -162,34 +162,42 @@ def spawn_burst(particles: list[Particle], x: float, y: float, color, count: int
 
 
 def draw_weapon_on_hamster(surf: pygame.Surface, cx: int, cy: int, angle: float, weapon_id: str):
-    """Rysuje aktualnie trzymaną broń obracającą się w stronę kursora myszy."""
+    """Rysuje szczegółową broń z połyskiem obracającą się w stronę kursora myszy."""
     cos_a = math.cos(angle)
     sin_a = math.sin(angle)
-    # Wektor prostopadły do lufy (do rysowania detali broni)
-    perp_x = -sin_a
-    perp_y = cos_a
+    flip = -1 if cos_a < 0 else 1
+    perp_x = -sin_a * flip
+    perp_y = cos_a * flip
 
     def pt(fwd: float, side: float = 0.0) -> tuple[int, int]:
         return (int(cx + cos_a * fwd + perp_x * side), int(cy + sin_a * fwd + perp_y * side))
 
     if weapon_id == "ziarna":
-        # Miotacz Ziaren (drewniano-złota wyrzutnia)
-        pygame.draw.line(surf, (130, 85, 45), pt(4), pt(22), 7)
-        pygame.draw.line(surf, (240, 200, 75), pt(10), pt(23), 4)
-        pygame.draw.circle(surf, (95, 65, 35), pt(23), 4)
+        # Miotacz Ziaren — drewniany uchwyt, złota lufa i komora na słonecznik
+        pygame.draw.line(surf, (115, 72, 36), pt(2, 4), pt(7, 9), 5)  # rękojeść
+        pygame.draw.line(surf, (135, 86, 44), pt(3), pt(22), 8)
+        pygame.draw.line(surf, (245, 206, 78), pt(8, -1), pt(23, -1), 4)
+        pygame.draw.circle(surf, (255, 242, 165), pt(12, -2), 2)
+        pygame.draw.circle(surf, (68, 48, 28), pt(23), 4)
     elif weapon_id == "karabin":
-        # Karabin Chomik-AR
-        pygame.draw.line(surf, (55, 60, 70), pt(2), pt(28), 6)
-        pygame.draw.line(surf, (145, 95, 50), pt(2), pt(11), 6)
-        pygame.draw.line(surf, (35, 38, 45), pt(14, 0), pt(15, 7), 4)  # magazynek
+        # Karabin Chomik-AR — kolba, magazynek bananowy, szyna celownicza i metaliczny blik
+        pygame.draw.line(surf, (145, 92, 46), pt(-2, 1), pt(10, 1), 7)  # kolba
+        pygame.draw.line(surf, (44, 48, 58), pt(8), pt(29), 7)         # korpus i lufa
+        pygame.draw.line(surf, (120, 130, 148), pt(9, -2), pt(26, -2), 2)  # połysk
+        pygame.draw.line(surf, (32, 35, 42), pt(15, 2), pt(17, 9), 4)  # magazynek
+        pygame.draw.line(surf, (255, 195, 70), pt(28), pt(31), 3)      # końcówka lufy
     elif weapon_id == "shotgun":
-        # Shotgun Orzechowy (krótki, gruby)
-        pygame.draw.line(surf, (125, 72, 38), pt(2), pt(12), 7)
-        pygame.draw.line(surf, (70, 75, 85), pt(10), pt(26), 8)
-        pygame.draw.line(surf, (230, 120, 45), pt(13), pt(19), 5)  # pompka
+        # Shotgun Orzechowy — szeroka podwójna lufa, kolba i pomarańczowa pompka
+        pygame.draw.line(surf, (128, 74, 38), pt(-1, 2), pt(10, 1), 8)  # kolba
+        pygame.draw.line(surf, (52, 56, 66), pt(8), pt(27), 9)          # gruba lufa
+        pygame.draw.line(surf, (140, 148, 165), pt(9, -2), pt(26, -2), 2)
+        pygame.draw.line(surf, (238, 125, 42), pt(13, 2), pt(21, 2), 6)  # pompka
     elif weapon_id == "awp":
-        # Snajperka AWP (długa, zielona z lunetą!)
-        pygame.draw.line(surf, (60, 115, 65), pt(0), pt(22), 7)
-        pygame.draw.line(surf, (40, 45, 52), pt(20), pt(38), 4)  # długa lufa
-        pygame.draw.line(surf, (30, 35, 42), pt(9, -6), pt(21, -6), 4)  # luneta
-        pygame.draw.circle(surf, (255, 60, 60), pt(38), 2)  # końcówka lasera
+        # Snajperka AWP — oliwkowy korpus, luneta ze szkiełkiem, długa lufa i hamulec wylotowy
+        pygame.draw.line(surf, (56, 118, 62), pt(-2, 1), pt(22, 0), 8)
+        pygame.draw.line(surf, (92, 162, 96), pt(0, -2), pt(20, -2), 2)
+        pygame.draw.line(surf, (36, 40, 48), pt(20), pt(39), 4)         # długa lufa
+        pygame.draw.line(surf, (24, 28, 35), pt(37), pt(41), 6)         # hamulec wylotowy
+        pygame.draw.line(surf, (26, 30, 38), pt(7, -6), pt(22, -6), 5)  # luneta
+        pygame.draw.circle(surf, (95, 220, 255), pt(22, -6), 2)         # szkiełko lunety
+        pygame.draw.circle(surf, (255, 55, 55), pt(41), 2)              # laser
