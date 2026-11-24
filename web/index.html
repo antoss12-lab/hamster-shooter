@@ -1596,6 +1596,44 @@
     }
   }
 
+  function isSolidCell(c, r) {
+    if (r >= 0 && r < MAP_ROWS && c >= 0 && c < MAP_COLS) {
+      const ch = LAYOUT[r][c];
+      return ch === "#" || ch === "B" || ch === "?" || ch === "P";
+    }
+    return true;
+  }
+
+  function findGroundY(x, bottomY) {
+    const c = Math.floor(x / TILE);
+    if (c < 0 || c >= MAP_COLS) return null;
+    const startR = Math.max(0, Math.floor(bottomY / TILE));
+    for (let r = startR; r < MAP_ROWS; r++) {
+      if (isSolidCell(c, r)) return r * TILE;
+    }
+    return null;
+  }
+
+  function draw3DExtrusion(dx, dy, c, r, ox, oy, topCol, sideCol, outCol) {
+    if (!isSolidCell(c, r - 1)) {
+      ctx.fillStyle = topCol; ctx.strokeStyle = outCol; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(dx, dy); ctx.lineTo(dx + TILE, dy); ctx.lineTo(dx + TILE + ox, dy + oy); ctx.lineTo(dx + ox, dy + oy);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    if (ox > 0 && !isSolidCell(c + 1, r)) {
+      ctx.fillStyle = sideCol; ctx.strokeStyle = outCol; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(dx + TILE, dy); ctx.lineTo(dx + TILE + ox, dy + oy); ctx.lineTo(dx + TILE + ox, dy + TILE + oy); ctx.lineTo(dx + TILE, dy + TILE);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if (ox < 0 && !isSolidCell(c - 1, r)) {
+      ctx.fillStyle = sideCol; ctx.strokeStyle = outCol; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(dx, dy); ctx.lineTo(dx + ox, dy + oy); ctx.lineTo(dx + ox, dy + TILE + oy); ctx.lineTo(dx, dy + TILE);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+
   function drawFighter(p, isMe) {
     if (!p.alive) return;
     const cx = p.x - camX, cy = p.y - camY;
@@ -1607,20 +1645,31 @@
       ctx.lineTo(cx + Math.cos(p.aim) * 750, cy + Math.sin(p.aim) * 750); ctx.stroke();
     }
 
-    // Miękki cień pod łapkami chomika
-    if (p.onGround) {
-      ctx.fillStyle = "rgba(18, 24, 38, 0.35)";
-      ctx.beginPath(); ctx.ellipse(cx, cy + 17, 17, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    // Dynamiczny cień 3D rzucany na platformę pod chomikiem nawet w locie (jak w Super Mario 3D World!)
+    const gY = findGroundY(p.x, p.y + 15);
+    if (gY !== null) {
+      const hAbove = Math.max(0, gY - (p.y + 17));
+      if (hAbove < 260) {
+        const f = 1 - hAbove / 260;
+        ctx.fillStyle = `rgba(14, 24, 38, ${(0.45 * f).toFixed(2)})`;
+        ctx.beginPath();
+        ctx.ellipse(cx, gY - camY - 2, 19 * (0.45 + 0.55 * f), 5.5 * (0.45 + 0.55 * f), 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     const walkPhase = (Math.abs(p.vx || 0) > 25 && p.onGround !== false) ? elapsed * 14 : 0;
     const bob = walkPhase ? Math.abs(Math.sin(walkPhase)) * -3.2 : 0;
     drawHamsterAvatar(ctx, cx, cy + bob, p.skin_id, facingRight, p.aim || 0, 1.0, walkPhase);
-    // Delikatny górny blik 3D na futerku
-    ctx.fillStyle = "rgba(255,255,255,0.16)";
-    ctx.beginPath(); ctx.ellipse(cx - 3, cy + bob - 9, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
 
-    // Szczegółowa broń
+    // Sferyczne cieniowanie 3D figurki (radialny gradient światła i cienia jak w Super Mario 3D!)
+    const radG = ctx.createRadialGradient(cx - 6, cy + bob - 8, 2, cx, cy + bob, 18);
+    radG.addColorStop(0, "rgba(255,255,255,0.34)");
+    radG.addColorStop(0.55, "rgba(255,255,255,0)");
+    radG.addColorStop(1, "rgba(18,12,28,0.28)");
+    ctx.fillStyle = radG;
+    ctx.beginPath(); ctx.arc(cx, cy + bob, 17, 0, Math.PI * 2); ctx.fill();
+
     drawDetailedWeapon(ctx, cx, cy + bob, p.aim || 0, p.weapon_id || "ziarna");
 
     if ((p.shield || p.shieldTimer || 0) > 0) {
@@ -1628,7 +1677,6 @@
       ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.stroke();
     }
 
-    // Pasek HP i nick wyraźnie NAD czapką!
     const ratio = Math.max(0, (p.hp || 0) / (p.max_hp || p.maxHp || 100));
     ctx.fillStyle = "#1d1d24"; ctx.fillRect(cx - 20, cy - 42, 40, 6);
     ctx.fillStyle = isMe ? "#40c057" : "#fa5252"; ctx.fillRect(cx - 19, cy - 41, 38 * ratio, 4);
@@ -1674,6 +1722,20 @@
     ctx.fillStyle = "#ffec69"; ctx.beginPath(); ctx.arc(sunX, sunY, 44, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "#fffab4"; ctx.beginPath(); ctx.arc(sunX - 10, sunY - 10, 20, 0, Math.PI * 2); ctx.fill();
 
+    // 1a. Latające wysepki 3D w oddali (jak w Super Mario 3D World!)
+    for (const [ix0, iy0, iw] of [[300, 290, 90], [1080, 240, 110]]) {
+      const ix = ix0 - camX * 0.65, iy = iy0 - camY * 0.55;
+      ctx.fillStyle = "#98785f";
+      ctx.beginPath(); ctx.moveTo(ix - iw / 2, iy); ctx.lineTo(ix + iw / 2, iy); ctx.lineTo(ix + iw / 5, iy + 46); ctx.lineTo(ix - iw / 4, iy + 36); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#785c46";
+      ctx.beginPath(); ctx.moveTo(ix, iy); ctx.lineTo(ix + iw / 2, iy); ctx.lineTo(ix + iw / 5, iy + 46); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#4ec65c"; ctx.beginPath(); ctx.ellipse(ix, iy - 1, iw / 2 + 4, 11, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#76e87a"; ctx.beginPath(); ctx.ellipse(ix, iy - 4, iw / 2 - 4, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#845630"; ctx.fillRect(ix - 18, iy - 34, 8, 26);
+      ctx.fillStyle = "#3ab248"; ctx.beginPath(); ctx.arc(ix - 14, iy - 42, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#60da66"; ctx.beginPath(); ctx.arc(ix - 18, iy - 46, 9, 0, Math.PI * 2); ctx.fill();
+    }
+
     // 1b. Odległe góry (paralaksa) + Zamek Chomików na wzgórzu + wzgórza Mario
     ctx.fillStyle = "#76c0a8";
     for (const [mx, mw, mh] of [[160, 280, 290], [540, 340, 340], [1020, 310, 310], [1440, 290, 280]]) {
@@ -1718,77 +1780,120 @@
       drawBgSunflower(fx - camX, groundY, fsc, Math.sin(elapsed * 2.2 + fx * 0.02) * 5 * fsc);
     }
 
-    // 2. Kafelki mapy 3D z cieniami, połyskiem i nitami
+    // 2. Styl Super Mario 3D World — Trawiasta łąka 3D w szachownicę + dynamiczna głębia 2.5D!
+    const oy = -10;
+    const getOx = (dx) => Math.max(-9, Math.min(9, Math.round((SCREEN_W * 0.5 - (dx + TILE * 0.5)) * 0.022)));
+
+    if (groundY >= -40 && groundY <= SCREEN_H + 40) {
+      for (let c = 1; c < MAP_COLS - 1; c++) {
+        const dx = c * TILE - camX;
+        if (dx < -TILE || dx > SCREEN_W + TILE) continue;
+        const ox = getOx(dx);
+        ctx.fillStyle = c % 2 === 0 ? "#5ed660" : "#48c04e";
+        ctx.beginPath(); ctx.moveTo(dx, groundY); ctx.lineTo(dx + TILE, groundY); ctx.lineTo(dx + TILE + ox, groundY - 14); ctx.lineTo(dx + ox, groundY - 14); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = c % 2 === 0 ? "#48c04e" : "#5ed660";
+        ctx.beginPath(); ctx.moveTo(dx + ox, groundY - 14); ctx.lineTo(dx + TILE + ox, groundY - 14); ctx.lineTo(dx + TILE + ox * 2, groundY - 24); ctx.lineTo(dx + ox * 2, groundY - 24); ctx.closePath(); ctx.fill();
+      }
+    }
+
+    // PASS 1: 3D górne i boczne ścianki wszystkich cegieł i sześcianów '?'
     for (const s of solids) {
       const dx = s.x - camX, dy = s.y - camY;
-      if (dx < -TILE || dx > SCREEN_W || dy < -TILE || dy > SCREEN_H) continue;
+      if (dx < -TILE - 16 || dx > SCREEN_W + 16 || dy < -TILE - 16 || dy > SCREEN_H + 16) continue;
+      const ox = getOx(dx);
+      if (s.ch === "B") {
+        ctx.fillStyle = "rgba(12,22,42,0.26)"; ctx.fillRect(dx + 4, dy + TILE, TILE, 8);
+        draw3DExtrusion(dx, dy, s.c, s.r, ox, oy, "#60d65c", "#8e3c1c", "#442210");
+      } else if (s.ch === "?") {
+        const cd = blockCooldowns[`${s.c},${s.r}`] || 0;
+        ctx.fillStyle = "rgba(12,22,42,0.26)"; ctx.fillRect(dx + 4, dy + TILE, TILE, 8);
+        draw3DExtrusion(dx, dy, s.c, s.r, ox, oy, cd > 0 ? "#9a8672" : "#ffe86c", cd > 0 ? "#5c4c3e" : "#b67a12", "#70440c");
+      }
+    }
+
+    // PASS 2: Fronty 3D (ziemia z zaokrągloną trawką, cegły, rury z otworem 3D, sześciany '?')
+    const gleamPos = (elapsed * 38) % 72;
+    for (const s of solids) {
+      const dx = s.x - camX, dy = s.y - camY;
+      if (dx < -TILE - 16 || dx > SCREEN_W + 16 || dy < -TILE - 16 || dy > SCREEN_H + 16) continue;
       if (s.ch === "#") {
-        ctx.fillStyle = "#865430"; ctx.fillRect(dx, dy, TILE, TILE);
-        ctx.fillStyle = "#966038"; ctx.fillRect(dx + 3, dy + 3, TILE - 6, TILE - 6);
-        ctx.fillStyle = "#6e4224"; ctx.beginPath(); ctx.arc(dx + 12, dy + 22, 3.5, 0, Math.PI * 2); ctx.arc(dx + 28, dy + 28, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#84522e"; ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#986038"; ctx.fillRect(dx + 3, dy + 3, TILE - 6, TILE - 6);
+        ctx.fillStyle = "#6c4022"; ctx.beginPath(); ctx.arc(dx + 12, dy + 22, 3.5, 0, Math.PI * 2); ctx.arc(dx + 28, dy + 28, 4, 0, Math.PI * 2); ctx.fill();
         if (s.r === MAP_ROWS - 2) {
-          ctx.fillStyle = "#36b23e"; ctx.fillRect(dx, dy, TILE, 12);
-          ctx.fillStyle = "#6ae060"; ctx.fillRect(dx, dy, TILE, 5);
+          ctx.fillStyle = "#2eae3a"; ctx.fillRect(dx, dy, TILE, 12);
+          ctx.fillStyle = "#76ec66"; ctx.fillRect(dx, dy, TILE, 4);
+          for (let gx = 5; gx < TILE; gx += 10) { ctx.fillStyle = "#2eae3a"; ctx.beginPath(); ctx.arc(dx + gx, dy + 11, 5.5, 0, Math.PI); ctx.fill(); }
         }
-        ctx.strokeStyle = "#5c361c"; ctx.lineWidth = 1.5; ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.strokeStyle = "#58341a"; ctx.lineWidth = 1.5; ctx.strokeRect(dx, dy, TILE, TILE);
       } else if (s.ch === "B") {
-        ctx.fillStyle = "rgba(15,25,45,0.22)"; ctx.fillRect(dx + 3, dy + TILE, TILE, 7);
-        ctx.fillStyle = "#be5a2e"; ctx.fillRect(dx, dy, TILE, TILE);
-        ctx.fillStyle = "#d66c3a"; ctx.fillRect(dx + 2, dy + 2, 16, 16); ctx.fillRect(dx + 22, dy + 2, 16, 16);
+        ctx.fillStyle = "#b0522a"; ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#d86c38"; ctx.fillRect(dx + 2, dy + 2, 16, 16); ctx.fillRect(dx + 22, dy + 2, 16, 16);
         ctx.fillRect(dx + 11, dy + 22, 18, 16);
-        ctx.fillStyle = "#f29862"; ctx.fillRect(dx + 2, dy + 2, 16, 2); ctx.fillRect(dx + 22, dy + 2, 16, 2); ctx.fillRect(dx + 11, dy + 22, 18, 2);
-        ctx.strokeStyle = "#52200e"; ctx.lineWidth = 2;
-        ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#f8a670"; ctx.fillRect(dx + 2, dy + 2, 16, 2); ctx.fillRect(dx + 22, dy + 2, 16, 2); ctx.fillRect(dx + 11, dy + 22, 18, 2);
+        ctx.strokeStyle = "#4a1c0c"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
         ctx.beginPath(); ctx.moveTo(dx, dy + 20); ctx.lineTo(dx + TILE, dy + 20); ctx.moveTo(dx + 20, dy); ctx.lineTo(dx + 20, dy + 20);
         ctx.moveTo(dx + 10, dy + 20); ctx.lineTo(dx + 10, dy + TILE); ctx.moveTo(dx + 30, dy + 20); ctx.lineTo(dx + 30, dy + TILE); ctx.stroke();
       } else if (s.ch === "P") {
-        ctx.fillStyle = "#1c842c"; ctx.fillRect(dx, dy, 6, TILE);
-        ctx.fillStyle = "#3ec64c"; ctx.fillRect(dx + 6, dy, 7, TILE);
-        ctx.fillStyle = "#94f894"; ctx.fillRect(dx + 13, dy, 6, TILE);
-        ctx.fillStyle = "#34b844"; ctx.fillRect(dx + 19, dy, 10, TILE);
-        ctx.fillStyle = "#186622"; ctx.fillRect(dx + 29, dy, 11, TILE);
-        ctx.strokeStyle = "#0e4818"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = "#187826"; ctx.fillRect(dx, dy, 5, TILE);
+        ctx.fillStyle = "#38c046"; ctx.fillRect(dx + 5, dy, 6, TILE);
+        ctx.fillStyle = "#73ec76"; ctx.fillRect(dx + 11, dy, 5, TILE);
+        ctx.fillStyle = "#c0ffbe"; ctx.fillRect(dx + 16, dy, 4, TILE);
+        ctx.fillStyle = "#36ba44"; ctx.fillRect(dx + 20, dy, 9, TILE);
+        ctx.fillStyle = "#10581c"; ctx.fillRect(dx + 29, dy, 11, TILE);
+        ctx.strokeStyle = "#0c4014"; ctx.lineWidth = 2; ctx.strokeRect(dx, dy, TILE, TILE);
         if (s.r > 0 && LAYOUT[s.r - 1][s.c] !== "P") {
-          ctx.fillStyle = "#30bc44"; ctx.fillRect(dx - 4, dy, TILE + 8, 13);
-          ctx.fillStyle = "#94f894"; ctx.fillRect(dx + 10, dy + 2, 7, 9);
-          ctx.strokeStyle = "#0e4818"; ctx.strokeRect(dx - 4, dy, TILE + 8, 13);
+          ctx.fillStyle = "#2cb640"; ctx.fillRect(dx - 5, dy, TILE + 10, 14);
+          ctx.fillStyle = "#b0ffb0"; ctx.fillRect(dx + 10, dy + 2, 7, 10);
+          ctx.strokeStyle = "#0c4014"; ctx.strokeRect(dx - 5, dy, TILE + 10, 14);
+          // 3D eliptyczny otwór rury z ciemną głębią tunelu!
+          ctx.fillStyle = "#5ce062"; ctx.beginPath(); ctx.ellipse(dx + TILE / 2, dy - 1, TILE / 2 + 5, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = "#0a2c12"; ctx.beginPath(); ctx.ellipse(dx + TILE / 2, dy - 1, TILE / 2 - 3, 4, 0, 0, Math.PI * 2); ctx.fill();
         }
       } else if (s.ch === "?") {
         const cd = blockCooldowns[`${s.c},${s.r}`] || 0;
-        ctx.fillStyle = "rgba(15,25,45,0.22)"; ctx.fillRect(dx + 3, dy + TILE, TILE, 7);
-        ctx.fillStyle = cd > 0 ? "#7c6856" : "#f5c224";
+        ctx.fillStyle = cd > 0 ? "#786454" : "#f5c224";
         ctx.fillRect(dx, dy, TILE, TILE);
         if (cd <= 0) {
-          ctx.fillStyle = "#fff296"; ctx.fillRect(dx + 3, dy + 3, TILE - 6, 7);
+          ctx.fillStyle = "#fff6a8"; ctx.fillRect(dx + 3, dy + 3, TILE - 6, 7);
+          if (gleamPos < 36) {
+            ctx.strokeStyle = "rgba(255,255,235,0.85)"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(dx + gleamPos, dy + 4); ctx.lineTo(dx + Math.max(4, gleamPos - 8), dy + TILE - 5); ctx.stroke();
+          }
         }
         ctx.fillStyle = "#6e440e";
         for (const [nx, ny] of [[6, 6], [TILE - 6, 6], [6, TILE - 6], [TILE - 6, TILE - 6]]) {
           ctx.beginPath(); ctx.arc(dx + nx, dy + ny, 2, 0, Math.PI * 2); ctx.fill();
         }
-        ctx.strokeStyle = cd > 0 ? "#44362a" : "#94580c"; ctx.lineWidth = 2.5; ctx.strokeRect(dx, dy, TILE, TILE);
+        ctx.strokeStyle = cd > 0 ? "#403226" : "#8e520a"; ctx.lineWidth = 2.5; ctx.strokeRect(dx, dy, TILE, TILE);
         if (cd <= 0) {
           ctx.font = "bold 24px Segoe UI"; ctx.textAlign = "center";
-          ctx.fillStyle = "#824408"; ctx.fillText("?", dx + 22, dy + 30);
-          ctx.fillStyle = "#fffbe1"; ctx.fillText("?", dx + 20, dy + 28);
+          ctx.fillStyle = "#7c3e08"; ctx.fillText("?", dx + 22, dy + 30);
+          ctx.fillStyle = "#fffce8"; ctx.fillText("?", dx + 20, dy + 28);
         }
       }
     }
 
     for (const sp of springs) {
       const dx = sp.x - camX, dy = sp.y - camY;
-      ctx.fillStyle = "#f5e8c8"; ctx.fillRect(dx + sp.w / 2 - 7, dy + 8, 14, sp.h - 8);
-      ctx.fillStyle = "#e42a34"; ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 7, sp.w / 2 + 5, 8, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#fa5c60"; ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 4, sp.w / 2 - 2, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(18,38,24,0.45)"; ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + sp.h - 2, sp.w / 2, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#f5e8c8"; ctx.fillRect(dx + sp.w / 2 - 8, dy + 8, 16, sp.h - 9);
+      ctx.fillStyle = "#d4c29e"; ctx.fillRect(dx + sp.w / 2 + 1, dy + 8, 7, sp.h - 9);
+      ctx.fillStyle = "#da222c"; ctx.beginPath(); ctx.ellipse(dx + sp.w / 2, dy + 6, sp.w / 2 + 6, 8.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fc6066"; ctx.beginPath(); ctx.ellipse(dx + sp.w / 2 - 2, dy + 3, sp.w / 2 - 2, 3.8, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#fff";
       ctx.beginPath(); ctx.arc(dx + 6, dy + 7, 2.8, 0, Math.PI * 2); ctx.arc(dx + sp.w / 2, dy + 5, 3, 0, Math.PI * 2); ctx.arc(dx + sp.w - 6, dy + 7, 2.8, 0, Math.PI * 2); ctx.fill();
     }
 
+    // Obracające się 3D ziarna słonecznika (jak złote monety w Super Mario 3D!)
     for (const seed of activeSeeds) {
-      const sx = seed.x - camX, sy = seed.y - camY + Math.sin(elapsed * 5 + seed.id) * 3;
-      ctx.fillStyle = "rgba(255,225,80,0.32)"; ctx.beginPath(); ctx.arc(sx, sy, 13 + Math.sin(elapsed * 7 + seed.id) * 2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#41372d"; ctx.beginPath(); ctx.ellipse(sx, sy, 6, 9, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#f0e1be"; ctx.beginPath(); ctx.ellipse(sx, sy, 2.5, 7, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sx - 2, sy - 4, 1.8, 0, Math.PI * 2); ctx.fill();
+      const sx = seed.x - camX, sy = seed.y - camY + Math.sin(elapsed * 5 + seed.id) * 3.5;
+      const spinW = Math.max(2, Math.abs(Math.cos(elapsed * 4.2 + seed.id)) * 6.5);
+      ctx.fillStyle = "rgba(255,225,80,0.34)"; ctx.beginPath(); ctx.arc(sx, sy, 13 + Math.sin(elapsed * 7 + seed.id) * 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ebb223"; ctx.beginPath(); ctx.ellipse(sx + 1, sy, spinW + 1, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#41372d"; ctx.beginPath(); ctx.ellipse(sx, sy, spinW, 9, 0, 0, Math.PI * 2); ctx.fill();
+      if (spinW >= 3) { ctx.fillStyle = "#f0e1be"; ctx.beginPath(); ctx.ellipse(sx, sy, spinW * 0.48, 7, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sx - Math.max(1, spinW * 0.3), sy - 4, 1.8, 0, Math.PI * 2); ctx.fill();
     }
 
     const pupCols = { speed: "#ffdc32", shield: "#46beff", heal: "#ff556e", damage: "#c85aff" };

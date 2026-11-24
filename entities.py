@@ -76,21 +76,22 @@ class SunflowerSeed:
                 self.y = self.rect.centery
 
     def draw(self, surf: pygame.Surface, cam_x: float, cam_y: float):
-        bob = math.sin(self.age * 5.0) * 3.0
+        bob = math.sin(self.age * 5.0) * 3.5
         sx = int(self.x - cam_x)
         sy = int(self.y - cam_y + bob)
 
-        # Pulsująca złota poświata + błysk pod ziarnem słonecznika
+        # Efekt obrotu 3D jak złote monety w Super Mario 3D World!
+        spin_w = max(2, int(abs(math.cos(self.age * 4.2)) * 6.5))
         glow_r = 12 + int(math.sin(self.age * 7.0) * 2)
         glow = pygame.Surface((glow_r * 2 + 4, glow_r * 2 + 4), pygame.SRCALPHA)
-        pygame.draw.circle(glow, (255, 225, 80, 75), (glow_r + 2, glow_r + 2), glow_r)
+        pygame.draw.circle(glow, (255, 225, 80, 82), (glow_r + 2, glow_r + 2), glow_r)
         surf.blit(glow, (sx - glow_r - 2, sy - glow_r - 2))
-        pygame.draw.circle(surf, (255, 240, 130), (sx, sy), 11, 2)
-        # Kształt ziarna słonecznika (pasiaste z blikiem!)
-        pygame.draw.ellipse(surf, SUNFLOWER_DARK, (sx - 6, sy - 9, 12, 18))
-        pygame.draw.ellipse(surf, SUNFLOWER_LIGHT, (sx - 3, sy - 7, 6, 14))
-        pygame.draw.line(surf, SUNFLOWER_DARK, (sx, sy - 8), (sx, sy + 8), 2)
-        pygame.draw.circle(surf, WHITE, (sx - 2, sy - 4), 2)
+        # Złota krawędź głębi 3D obracającego się ziarna
+        pygame.draw.ellipse(surf, (235, 178, 35), (sx - spin_w - 1, sy - 9, spin_w * 2 + 3, 18))
+        pygame.draw.ellipse(surf, SUNFLOWER_DARK, (sx - spin_w, sy - 9, spin_w * 2, 18))
+        if spin_w >= 3:
+            pygame.draw.ellipse(surf, SUNFLOWER_LIGHT, (sx - spin_w // 2, sy - 7, max(2, spin_w), 14))
+        pygame.draw.circle(surf, WHITE, (sx - max(1, spin_w // 3), sy - 4), 2)
 
 
 class PowerUp:
@@ -223,10 +224,13 @@ def draw_hamster_avatar(
             pygame.draw.circle(surf, ear_col, (ex, cy - ear_off_y), max(2, s(3.5)))
             pygame.draw.circle(surf, (40, 30, 25), (ex, cy - ear_off_y), ear_r, 1)
 
-    # Okrągłe puszyste ciałko z subtelnym cieniowaniem 3D i górnym blikiem!
-    pygame.draw.circle(surf, body_col, (cx, cy), r)
-    hi_col = (min(255, body_col[0] + 28), min(255, body_col[1] + 28), min(255, body_col[2] + 28))
-    pygame.draw.ellipse(surf, hi_col, (cx - s(10), cy - s(13), s(16), s(8)))
+    # Okrągłe puszyste ciałko ze sferycznym cieniowaniem 3D (styl figurki Super Mario 3D!)
+    shadow_col = (max(0, body_col[0] - 34), max(0, body_col[1] - 34), max(0, body_col[2] - 28))
+    pygame.draw.circle(surf, shadow_col, (cx, cy), r)
+    pygame.draw.circle(surf, body_col, (cx - s(1.5), cy - s(1.5)), max(2, r - s(1.2)))
+    hi_col = (min(255, body_col[0] + 38), min(255, body_col[1] + 38), min(255, body_col[2] + 36))
+    pygame.draw.ellipse(surf, hi_col, (cx - s(11), cy - s(14), s(16), s(9)))
+    pygame.draw.circle(surf, (min(255, hi_col[0] + 22), min(255, hi_col[1] + 22), min(255, hi_col[2] + 22)), (cx - s(6), cy - s(11)), max(2, s(3.2)))
     # Jasny brzuszek
     pygame.draw.ellipse(surf, belly_col, (cx - s(10), cy + s(1), s(20), s(14)))
 
@@ -1110,11 +1114,18 @@ class Hamster:
         if self.invuln_timer > 0 and int(self.invuln_timer * 14) % 2 == 0:
             return
 
-        # Miękki cień pod łapkami chomika (gdy stoi na platformie!)
-        if self.on_ground:
-            sh = pygame.Surface((36, 10), pygame.SRCALPHA)
-            pygame.draw.ellipse(sh, (18, 24, 38, 95), (0, 0, 36, 10))
-            surf.blit(sh, (cx - 18, cy + 13))
+        # Dynamiczny cień 3D rzucany na platformę pod chomikiem (nawet w trakcie skoku — jak w Super Mario 3D World!)
+        ground_y = level.find_ground_y(self.rect.centerx, self.rect.bottom - 2)
+        if ground_y is not None:
+            height_above = max(0.0, ground_y - self.rect.bottom)
+            if height_above < 260.0:
+                factor = 1.0 - (height_above / 260.0)
+                sh_w = max(12, int(38 * (0.45 + 0.55 * factor)))
+                sh_h = max(4, int(11 * (0.45 + 0.55 * factor)))
+                sh_alpha = int(115 * factor)
+                sh = pygame.Surface((sh_w, sh_h), pygame.SRCALPHA)
+                pygame.draw.ellipse(sh, (14, 24, 38, sh_alpha), (0, 0, sh_w, sh_h))
+                surf.blit(sh, (cx - sh_w // 2, int(ground_y - cam_y) - sh_h // 2 - 2))
 
         bob = abs(math.sin(self.walk_phase)) * -3.5 if self.on_ground else 0.0
         jump_lift = -3.0 * (self.squash_timer / 0.16) if self.squash_timer > 0 else 0.0
