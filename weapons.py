@@ -1,5 +1,6 @@
 """
-weapons.py — Pociski, efekty cząsteczkowe i latające teksty obrażeń.
+weapons.py — Pociski ze smugami, błyski z lufy, wyrzucane łuski, fale uderzeniowe
+oraz szczegółowe rysowanie 4 broni (na chomiku i jako ikonki w HUD).
 """
 
 import math
@@ -9,7 +10,7 @@ from settings import WEAPONS, GOLD, WHITE, SUNFLOWER_DARK, SUNFLOWER_LIGHT
 
 
 class Bullet:
-    """Pojedynczy pocisk wystrzelony przez gracza lub bota."""
+    """Pojedynczy pocisk z gładką, świecącą smugą."""
 
     def __init__(
         self,
@@ -37,6 +38,7 @@ class Bullet:
         self.lifetime = 1.5 if weapon_id != "shotgun" else 0.55
         self.alive = True
         self.trail: list[tuple[float, float]] = [(x, y)]
+        self.max_trail = 11 if weapon_id == "awp" else (5 if weapon_id != "shotgun" else 4)
 
     def update(self, dt: float, level):
         self.prev_x, self.prev_y = self.x, self.y
@@ -47,12 +49,10 @@ class Bullet:
             self.alive = False
             return
 
-        if self.weapon_id == "awp":
-            self.trail.append((self.x, self.y))
-            if len(self.trail) > 9:
-                self.trail.pop(0)
+        self.trail.append((self.x, self.y))
+        if len(self.trail) > self.max_trail:
+            self.trail.pop(0)
 
-        # Sprawdź kolizję ze ścianami i platformami (dla szybkiego AWP sprawdzamy też punkt w połowie)
         if self.weapon_id == "awp":
             mid_x = (self.prev_x + self.x) * 0.5
             mid_y = (self.prev_y + self.y) * 0.5
@@ -68,25 +68,26 @@ class Bullet:
         sx = int(self.x - cam_x)
         sy = int(self.y - cam_y)
 
+        if len(self.trail) >= 2:
+            pts = [(int(px - cam_x), int(py - cam_y)) for px, py in self.trail]
+            if self.weapon_id == "awp":
+                pygame.draw.lines(surf, (255, 110, 75), False, pts, 6)
+                pygame.draw.lines(surf, (255, 232, 140), False, pts, 3)
+                pygame.draw.lines(surf, WHITE, False, pts, 1)
+            else:
+                pygame.draw.lines(surf, self.color, False, pts, 3 if self.weapon_id != "shotgun" else 2)
+
         if self.weapon_id == "ziarna":
-            # Ładnie narysowane ziarenko słonecznika lecące w powietrzu!
             dx = math.cos(self.angle) * 6
             dy = math.sin(self.angle) * 6
             pygame.draw.line(surf, SUNFLOWER_DARK, (sx - dx, sy - dy), (sx + dx, sy + dy), 6)
             pygame.draw.line(surf, SUNFLOWER_LIGHT, (sx - dx * 0.6, sy - dy * 0.6), (sx + dx * 0.6, sy + dy * 0.6), 2)
         elif self.weapon_id == "awp":
-            # Jasna smuga snajperska AWP
-            if len(self.trail) >= 2:
-                pts = [(int(px - cam_x), int(py - cam_y)) for px, py in self.trail]
-                pygame.draw.lines(surf, (255, 220, 120), False, pts, 4)
-                pygame.draw.lines(surf, WHITE, False, pts, 2)
-            pygame.draw.circle(surf, (255, 80, 80), (sx, sy), 5)
+            pygame.draw.circle(surf, (255, 195, 95), (sx, sy), 7)
+            pygame.draw.circle(surf, WHITE, (sx, sy), 4)
         else:
-            # Pociski karabinu i shotguna
-            tx = int(self.x - math.cos(self.angle) * 10 - cam_x)
-            ty = int(self.y - math.sin(self.angle) * 10 - cam_y)
-            pygame.draw.line(surf, self.color, (tx, ty), (sx, sy), 4)
-            pygame.draw.circle(surf, WHITE, (sx, sy), self.radius - 1)
+            pygame.draw.circle(surf, self.color, (sx, sy), self.radius + 1)
+            pygame.draw.circle(surf, WHITE, (sx, sy), max(2, self.radius - 1))
 
 
 class Particle:
@@ -115,6 +116,97 @@ class Particle:
         ratio = max(0.0, self.life / self.max_life)
         r = max(1, int(self.radius * ratio))
         pygame.draw.circle(surf, self.color, (int(self.x - cam_x), int(self.y - cam_y)), r)
+
+
+class ShockwaveRing:
+    """Rozchodzący się pierścień światła (przy podwójnym skoku, sprężynie, trafieniu lub pokonaniu!)."""
+
+    def __init__(self, x: float, y: float, color, max_radius: float = 34.0, life: float = 0.28, width: int = 3):
+        self.x = x
+        self.y = y
+        self.color = color
+        self.max_radius = max_radius
+        self.life = life
+        self.max_life = life
+        self.width = width
+
+    def update(self, dt: float):
+        self.life -= dt
+
+    def draw(self, surf: pygame.Surface, cam_x: float, cam_y: float):
+        if self.life <= 0:
+            return
+        prog = 1.0 - (self.life / self.max_life)
+        r = max(3, int(6 + (self.max_radius - 6) * prog))
+        alpha = max(0, min(255, int(215 * (1.0 - prog))))
+        s = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
+        w = max(1, int(self.width * (1.0 - prog * 0.5)))
+        pygame.draw.circle(s, (self.color[0], self.color[1], self.color[2], alpha), (r + 2, r + 2), r, w)
+        surf.blit(s, (int(self.x - cam_x) - r - 2, int(self.y - cam_y) - r - 2))
+
+
+class MuzzleFlash:
+    """Krótki, efektowny błysk gwiazdki przy końcu lufy podczas strzału."""
+
+    def __init__(self, x: float, y: float, angle: float, color, size: float = 13.0):
+        self.x = x
+        self.y = y
+        self.angle = angle
+        self.color = color
+        self.size = size
+        self.life = 0.075
+        self.max_life = 0.075
+
+    def update(self, dt: float):
+        self.life -= dt
+
+    def draw(self, surf: pygame.Surface, cam_x: float, cam_y: float):
+        if self.life <= 0:
+            return
+        ratio = self.life / self.max_life
+        sx = int(self.x - cam_x)
+        sy = int(self.y - cam_y)
+        r = max(3, int(self.size * ratio))
+        # Złota poświata + 4-ramienna gwiazdka
+        pts = []
+        for i in range(8):
+            ang = self.angle + i * (math.pi / 4)
+            rad = r * (1.45 if i % 2 == 0 else 0.45)
+            pts.append((sx + int(math.cos(ang) * rad), sy + int(math.sin(ang) * rad)))
+        pygame.draw.polygon(surf, self.color, pts)
+        pygame.draw.circle(surf, WHITE, (sx, sy), max(2, r // 2))
+
+
+class ShellCasing:
+    """Obracająca się mosiężna łuska lub łupinka wylatująca z broni podczas strzelania."""
+
+    def __init__(self, x: float, y: float, facing_right: bool, weapon_id: str):
+        self.x = x
+        self.y = y
+        d = -1 if facing_right else 1
+        self.vx = d * random.uniform(60, 130)
+        self.vy = random.uniform(-190, -110)
+        self.angle = random.uniform(0, math.tau)
+        self.spin = random.uniform(-14, 14)
+        self.color = (225, 65, 55) if weapon_id == "shotgun" else ((235, 200, 95) if weapon_id != "ziarna" else SUNFLOWER_LIGHT)
+        self.life = 0.75
+        self.max_life = 0.75
+
+    def update(self, dt: float):
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+        self.vy += 680.0 * dt
+        self.angle += self.spin * dt
+        self.life -= dt
+
+    def draw(self, surf: pygame.Surface, cam_x: float, cam_y: float):
+        if self.life <= 0:
+            return
+        sx = int(self.x - cam_x)
+        sy = int(self.y - cam_y)
+        dx = int(math.cos(self.angle) * 3.5)
+        dy = int(math.sin(self.angle) * 3.5)
+        pygame.draw.line(surf, self.color, (sx - dx, sy - dy), (sx + dx, sy + dy), 3)
 
 
 class FloatingText:
@@ -173,31 +265,32 @@ def draw_weapon_on_hamster(surf: pygame.Surface, cx: int, cy: int, angle: float,
         return (int(cx + cos_a * fwd + perp_x * side), int(cy + sin_a * fwd + perp_y * side))
 
     if weapon_id == "ziarna":
-        # Miotacz Ziaren — drewniany uchwyt, złota lufa i komora na słonecznik
-        pygame.draw.line(surf, (115, 72, 36), pt(2, 4), pt(7, 9), 5)  # rękojeść
+        pygame.draw.line(surf, (115, 72, 36), pt(2, 4), pt(7, 9), 5)
         pygame.draw.line(surf, (135, 86, 44), pt(3), pt(22), 8)
         pygame.draw.line(surf, (245, 206, 78), pt(8, -1), pt(23, -1), 4)
         pygame.draw.circle(surf, (255, 242, 165), pt(12, -2), 2)
         pygame.draw.circle(surf, (68, 48, 28), pt(23), 4)
     elif weapon_id == "karabin":
-        # Karabin Chomik-AR — kolba, magazynek bananowy, szyna celownicza i metaliczny blik
-        pygame.draw.line(surf, (145, 92, 46), pt(-2, 1), pt(10, 1), 7)  # kolba
-        pygame.draw.line(surf, (44, 48, 58), pt(8), pt(29), 7)         # korpus i lufa
-        pygame.draw.line(surf, (120, 130, 148), pt(9, -2), pt(26, -2), 2)  # połysk
-        pygame.draw.line(surf, (32, 35, 42), pt(15, 2), pt(17, 9), 4)  # magazynek
-        pygame.draw.line(surf, (255, 195, 70), pt(28), pt(31), 3)      # końcówka lufy
+        pygame.draw.line(surf, (145, 92, 46), pt(-2, 1), pt(10, 1), 7)
+        pygame.draw.line(surf, (44, 48, 58), pt(8), pt(29), 7)
+        pygame.draw.line(surf, (120, 130, 148), pt(9, -2), pt(26, -2), 2)
+        pygame.draw.line(surf, (32, 35, 42), pt(15, 2), pt(17, 9), 4)
+        pygame.draw.line(surf, (255, 195, 70), pt(28), pt(31), 3)
     elif weapon_id == "shotgun":
-        # Shotgun Orzechowy — szeroka podwójna lufa, kolba i pomarańczowa pompka
-        pygame.draw.line(surf, (128, 74, 38), pt(-1, 2), pt(10, 1), 8)  # kolba
-        pygame.draw.line(surf, (52, 56, 66), pt(8), pt(27), 9)          # gruba lufa
+        pygame.draw.line(surf, (128, 74, 38), pt(-1, 2), pt(10, 1), 8)
+        pygame.draw.line(surf, (52, 56, 66), pt(8), pt(27), 9)
         pygame.draw.line(surf, (140, 148, 165), pt(9, -2), pt(26, -2), 2)
-        pygame.draw.line(surf, (238, 125, 42), pt(13, 2), pt(21, 2), 6)  # pompka
+        pygame.draw.line(surf, (238, 125, 42), pt(13, 2), pt(21, 2), 6)
     elif weapon_id == "awp":
-        # Snajperka AWP — oliwkowy korpus, luneta ze szkiełkiem, długa lufa i hamulec wylotowy
         pygame.draw.line(surf, (56, 118, 62), pt(-2, 1), pt(22, 0), 8)
         pygame.draw.line(surf, (92, 162, 96), pt(0, -2), pt(20, -2), 2)
-        pygame.draw.line(surf, (36, 40, 48), pt(20), pt(39), 4)         # długa lufa
-        pygame.draw.line(surf, (24, 28, 35), pt(37), pt(41), 6)         # hamulec wylotowy
-        pygame.draw.line(surf, (26, 30, 38), pt(7, -6), pt(22, -6), 5)  # luneta
-        pygame.draw.circle(surf, (95, 220, 255), pt(22, -6), 2)         # szkiełko lunety
-        pygame.draw.circle(surf, (255, 55, 55), pt(41), 2)              # laser
+        pygame.draw.line(surf, (36, 40, 48), pt(20), pt(39), 4)
+        pygame.draw.line(surf, (24, 28, 35), pt(37), pt(41), 6)
+        pygame.draw.line(surf, (26, 30, 38), pt(7, -6), pt(22, -6), 5)
+        pygame.draw.circle(surf, (95, 220, 255), pt(22, -6), 2)
+        pygame.draw.circle(surf, (255, 55, 55), pt(41), 2)
+
+
+def draw_weapon_icon(surf: pygame.Surface, cx: int, cy: int, weapon_id: str):
+    """Rysuje małą ikonkę broni w pasku HUD na dole ekranu."""
+    draw_weapon_on_hamster(surf, cx - 16, cy, -0.12, weapon_id)

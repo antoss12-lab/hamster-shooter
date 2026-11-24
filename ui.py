@@ -31,6 +31,7 @@ from settings import (
     get_font,
 )
 from entities import draw_hamster_avatar
+from weapons import draw_weapon_icon
 
 
 def draw_panel(surf: pygame.Surface, rect: pygame.Rect, alpha: int = 215, border_col=GOLD):
@@ -47,12 +48,18 @@ def draw_panel(surf: pygame.Surface, rect: pygame.Rect, alpha: int = 215, border
     surf.blit(panel, rect.topleft)
 
 
-def draw_crosshair(surf: pygame.Surface, pos: tuple[int, int], weapon_id: str):
+def draw_crosshair(surf: pygame.Surface, pos: tuple[int, int], weapon_id: str, cooldown_ratio: float = 0.0):
+    """Dynamiczny celownik ze wskaźnikiem przeładowania broni."""
     mx, my = pos
     col = (255, 65, 65) if weapon_id == "awp" else WHITE
-    r = 14 if weapon_id == "shotgun" else (11 if weapon_id == "awp" else 9)
+    base_r = 14 if weapon_id == "shotgun" else (11 if weapon_id == "awp" else 9)
+    r = base_r + int(cooldown_ratio * 6)
     pygame.draw.circle(surf, (20, 20, 25), (mx, my), r + 1, 2)
     pygame.draw.circle(surf, col, (mx, my), r, 2)
+    if cooldown_ratio > 0.02:
+        # Łuk pokazujący przeładowanie AWP / Shotguna
+        arc_rect = pygame.Rect(mx - r - 4, my - r - 4, (r + 4) * 2, (r + 4) * 2)
+        pygame.draw.arc(surf, GOLD, arc_rect, 0.0, (1.0 - cooldown_ratio) * 6.283, 2)
     pygame.draw.line(surf, col, (mx - r - 5, my), (mx - 4, my), 2)
     pygame.draw.line(surf, col, (mx + 4, my), (mx + r + 5, my), 2)
     pygame.draw.line(surf, col, (mx, my - r - 5), (mx, my - 4), 2)
@@ -163,13 +170,13 @@ def draw_hud(
         row_txt = f_sm.render(f"{i + 1}. {f.name}: {f.total_seeds}", True, col)
         surf.blit(row_txt, (lb_rect.x + 14, lb_rect.y + 28 + i * 22))
 
-    # --- 4. Dół ekranu: Pasek broni [1] [2] [3] [4] ---
-    slot_w = 152
-    slot_h = 54
+    # --- 4. Dół ekranu: Pasek broni [1] [2] [3] [4] z ikonkami broni! ---
+    slot_w = 160
+    slot_h = 58
     gap = 10
     total_w = len(WEAPON_ORDER) * slot_w + (len(WEAPON_ORDER) - 1) * gap
     start_x = (SCREEN_W - total_w) // 2
-    y = SCREEN_H - slot_h - 12
+    y = SCREEN_H - slot_h - 10
 
     for i, wid in enumerate(WEAPON_ORDER):
         spec = WEAPONS[wid]
@@ -177,18 +184,21 @@ def draw_hud(
         selected = player.weapon_id == wid
         rect = pygame.Rect(start_x + i * (slot_w + gap), y, slot_w, slot_h)
         border = GOLD if selected else ((120, 195, 130) if owned else (85, 85, 100))
-        draw_panel(surf, rect, alpha=230 if selected else 175, border_col=border)
+        draw_panel(surf, rect, alpha=235 if selected else 180, border_col=border)
 
         key_lbl = f_sm.render(f"[{spec['key']}]", True, GOLD if selected else (180, 190, 210))
         surf.blit(key_lbl, (rect.x + 8, rect.y + 6))
 
         name_col = WHITE if owned else (130, 135, 150)
         w_lbl = f_sm.render(spec["name"].split()[0], True, name_col)
-        surf.blit(w_lbl, (rect.x + 36, rect.y + 6))
+        surf.blit(w_lbl, (rect.x + 34, rect.y + 6))
 
-        sub = "Wybrana" if selected else ("Gotowa" if owned else f"Sklep: {spec['cost']} z.")
+        # Mini-rysunek broni po prawej stronie slotu!
+        draw_weapon_icon(surf, rect.right - 28, rect.y + 30, wid)
+
+        sub = "Wybrana" if selected else ("Gotowa" if owned else f"{spec['cost']} z.")
         sub_col = GREEN if selected else ((180, 220, 190) if owned else (225, 165, 110))
-        surf.blit(f_xs.render(sub, True, sub_col), (rect.x + 10, rect.y + 30))
+        surf.blit(f_xs.render(sub, True, sub_col), (rect.x + 10, rect.y + 33))
 
     return shop_btn
 

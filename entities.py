@@ -29,7 +29,7 @@ from settings import (
     SUNFLOWER_DARK,
     SUNFLOWER_LIGHT,
 )
-from weapons import Bullet, Particle, FloatingText, spawn_burst, draw_weapon_on_hamster
+from weapons import Bullet, Particle, ShockwaveRing, MuzzleFlash, ShellCasing, FloatingText, spawn_burst, draw_weapon_on_hamster
 
 
 class SunflowerSeed:
@@ -154,8 +154,9 @@ def draw_hamster_avatar(
     scale: float = 1.0,
     bob_y: float = 0.0,
     hat_override: str | None = None,
+    walk_phase: float = 0.0,
 ):
-    """Rysuje uroczego chomika wraz ze skórką (uszka, policzki, akcesoria)."""
+    """Rysuje uroczego chomika wraz ze skórką, ogonkiem, cieniowaniem 3D i ruszającymi się łapkami."""
     skin = SKINS.get(skin_id, SKINS["klasyczny"])
     body_col = body_override if body_override is not None else skin["body"]
     belly_col = skin["belly"]
@@ -168,6 +169,11 @@ def draw_hamster_avatar(
 
     def s(v: float) -> int:
         return int(round(v * scale))
+
+    # Uroczy puszysty ogonek chomika z tyłu!
+    tail_bob = int(math.sin(walk_phase * 2.0) * 2.0 * scale)
+    pygame.draw.circle(surf, belly_col, (cx - d * s(16), cy + s(8) + tail_bob), max(3, s(4.5)))
+    pygame.draw.circle(surf, (40, 30, 25), (cx - d * s(16), cy + s(8) + tail_bob), max(3, s(4.5)), 1)
 
     # Peleryny (za plecami) dla Króla, Wampira i Super-Chomika
     if hat_override is None and skin_id in ("krol", "wampir", "superbohater"):
@@ -347,9 +353,17 @@ def draw_hamster_avatar(
         for sx_off in (-5, -1, 3):
             pygame.draw.line(surf, (75, 45, 50), (cx + s(sx_off), cy - s(13)), (cx + s(sx_off), cy - s(8)), 1)
 
-    # Łapki na dole
-    pygame.draw.ellipse(surf, ear_col, (cx - s(11), cy + s(13), s(8), s(5)))
-    pygame.draw.ellipse(surf, ear_col, (cx + s(3), cy + s(13), s(8), s(5)))
+    # Uroczy uśmiech i chomiczy ząbek (dla skórek bez kłów/rekinich zębów)
+    if hat_override is None and skin_id not in ("wampir", "rekin", "zombie", "robot", "cyber"):
+        pygame.draw.arc(surf, (65, 38, 30), (cx + d * s(1) - s(3), cy + s(1), s(7), s(5)), math.pi, math.tau, 1)
+        pygame.draw.rect(surf, WHITE, (cx + d * s(2), cy + s(4), max(2, s(3)), max(2, s(3))))
+
+    # Animowane łapki na dole (poruszają się naprzemiennie przy biegu!)
+    paw_swing = int(math.sin(walk_phase) * 4.5 * scale)
+    pygame.draw.ellipse(surf, ear_col, (cx - s(11) + paw_swing, cy + s(13), s(8), s(5)))
+    pygame.draw.ellipse(surf, (40, 30, 25), (cx - s(11) + paw_swing, cy + s(13), s(8), s(5)), 1)
+    pygame.draw.ellipse(surf, ear_col, (cx + s(3) - paw_swing, cy + s(13), s(8), s(5)))
+    pygame.draw.ellipse(surf, (40, 30, 25), (cx + s(3) - paw_swing, cy + s(13), s(8), s(5)), 1)
 
     # --- Akcesoria skórek lub czapki botów fabularnych (równo osadzone na głowie!) ---
     top_y = cy - r  # dokładny czubek głowy chomika
@@ -658,8 +672,10 @@ class Hamster:
         self.shield_timer = 0.0
         self.damage_timer = 0.0
 
-        # Animacja biegu
+        # Animacja biegu i sprężysty squash-and-stretch przy skoku/lądowaniu
         self.walk_phase = random.uniform(0, 6.28)
+        self.squash_timer = 0.0
+        self.sparkle_timer = random.uniform(0.1, 0.3)
 
         # Pamięć AI dla 7 atakujących botów
         self.ai_dir = random.choice([-1, 1])
@@ -691,17 +707,19 @@ class Hamster:
             self.on_ground = False
             self.coyote_timer = 0.0
             self.jumps_left = 1
+            self.squash_timer = 0.14
             if self.is_player:
                 sounds.play("jump")
             spawn_burst(particles, self.rect.centerx, self.rect.bottom, (235, 235, 240), count=5, speed=90)
             return True
         elif self.jumps_left > 0:
-            # PODWÓJNY SKOK w powietrzu!
+            # PODWÓJNY SKOK w powietrzu + pierścień powietrza pod łapkami!
             self.vy = -DOUBLE_JUMP_SPEED * (1.1 if self.speed_timer > 0 else 1.0)
             self.jumps_left -= 1
+            self.squash_timer = 0.16
             if self.is_player:
                 sounds.play("double_jump")
-            # Wyraźna biała chmurka pod łapkami podczas podwójnego skoku
+            particles.append(ShockwaveRing(self.rect.centerx, self.rect.bottom, (240, 248, 255), max_radius=30, life=0.25, width=3))
             spawn_burst(particles, self.rect.centerx, self.rect.bottom, WHITE, count=10, speed=150)
             return True
         return False
@@ -743,7 +761,10 @@ class Hamster:
         self.vx -= math.cos(self.aim_angle) * recoil * 0.45
         self.vy -= math.sin(self.aim_angle) * recoil * 0.2
 
-        # Iskierki z lufy
+        # Błysk z lufy (Muzzle Flash), wyrzucana łuska (Shell Casing) i iskierki!
+        flash_size = 18.0 if self.weapon_id == "awp" else (16.0 if self.weapon_id == "shotgun" else 11.0)
+        particles.append(MuzzleFlash(mx, my, self.aim_angle, spec["color"], size=flash_size))
+        particles.append(ShellCasing(self.rect.centerx, self.rect.centery - 2, self.facing_right, self.weapon_id))
         spawn_burst(particles, mx, my, spec["color"], count=4 if self.weapon_id != "shotgun" else 8, speed=130)
 
         if self.is_player:
@@ -771,6 +792,7 @@ class Hamster:
             self.hp = 0
             self.alive = False
             self.respawn_timer = 2.6 if self.is_player else 3.4
+            particles.append(ShockwaveRing(self.rect.centerx, self.rect.centery, GOLD, max_radius=54, life=0.35, width=4))
             spawn_burst(particles, self.rect.centerx, self.rect.centery, GOLD, count=18, speed=260)
 
             if attacker is not None and attacker is not self:
@@ -845,6 +867,8 @@ class Hamster:
             self.damage_timer = max(0.0, self.damage_timer - dt)
         if self.coyote_timer > 0:
             self.coyote_timer = max(0.0, self.coyote_timer - dt)
+        if self.squash_timer > 0:
+            self.squash_timer = max(0.0, self.squash_timer - dt)
 
     def move_and_collide(self, dt: float, level, seeds_list, powerups_list, particles, texts, sounds):
         """Fizyka platformówki 2D z kolizjami i uderzaniem w bloki '?' od dołu!"""
@@ -886,21 +910,47 @@ class Hamster:
         if was_on_ground and not self.on_ground and self.vy >= 0:
             self.coyote_timer = 0.11
 
-        # 3. Sprężyste grzybki-trampoliny
+        # 3. Sprężyste grzybki-trampoliny + fala uderzeniowa!
         for sp in level.springs:
             if self.rect.colliderect(sp) and self.vy >= -40:
                 self.vy = -SPRING_JUMP_SPEED
                 self.on_ground = False
                 self.jumps_left = 1
+                self.squash_timer = 0.18
+                particles.append(ShockwaveRing(sp.centerx, sp.top, (255, 110, 115), max_radius=36, life=0.28, width=3))
                 spawn_burst(particles, sp.centerx, sp.top, (255, 120, 120), count=10, speed=180)
                 if self.is_player:
                     sounds.play("spring")
 
-        # Animacja biegania
+        # Animacja biegania + iskierki wokół legendarnych skórek!
         if self.on_ground and abs(self.vx) > 25:
             self.walk_phase += dt * 14.0
         else:
             self.walk_phase = 0.0
+
+        if self.skin_id in ("ogien", "lod", "zloty", "diament", "galaktyka"):
+            self.sparkle_timer -= dt
+            if self.sparkle_timer <= 0:
+                self.sparkle_timer = 0.22
+                scol = {
+                    "ogien": (255, 145, 45),
+                    "lod": (165, 240, 255),
+                    "zloty": (255, 232, 95),
+                    "diament": (150, 255, 255),
+                    "galaktyka": (185, 145, 255),
+                }[self.skin_id]
+                particles.append(
+                    Particle(
+                        self.rect.centerx + random.uniform(-14, 14),
+                        self.rect.centery + random.uniform(-14, 12),
+                        random.uniform(-18, 18),
+                        random.uniform(-45, -18),
+                        scol,
+                        random.uniform(2.2, 3.8),
+                        0.45,
+                        gravity=-20.0,
+                    )
+                )
 
         return hit_wall
 
@@ -1067,6 +1117,7 @@ class Hamster:
             surf.blit(sh, (cx - 18, cy + 13))
 
         bob = abs(math.sin(self.walk_phase)) * -3.5 if self.on_ground else 0.0
+        jump_lift = -3.0 * (self.squash_timer / 0.16) if self.squash_timer > 0 else 0.0
         body_col = WHITE if self.hurt_flash > 0 else self.body_override
 
         draw_hamster_avatar(
@@ -1077,7 +1128,8 @@ class Hamster:
             self.facing_right,
             self.aim_angle,
             body_override=body_col,
-            bob_y=bob,
+            bob_y=bob + jump_lift,
+            walk_phase=self.walk_phase,
         )
 
         # Rysuj broń obracającą się w stronę kursora

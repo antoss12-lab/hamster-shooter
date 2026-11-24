@@ -106,6 +106,18 @@ class MarioArena:
             (1310, (MAP_ROWS - 2) * TILE_SIZE, 0.95),
             (1490, (MAP_ROWS - 2) * TILE_SIZE, 1.0),
         ]
+        # Złote pyłki słonecznika / motylki unoszące się powoli w powietrzu
+        self.ambient_motes = [
+            {
+                "x": random.uniform(80, WORLD_W - 80),
+                "y": random.uniform(90, WORLD_H - 120),
+                "vx": random.uniform(-14, 14),
+                "phase": random.uniform(0, 6.28),
+                "r": random.choice([2, 2, 3]),
+                "col": random.choice([(255, 245, 160), (255, 255, 230), (255, 215, 90)]),
+            }
+            for _ in range(28)
+        ]
 
         self._parse_layout()
         self._build_tile_textures()
@@ -247,21 +259,57 @@ class MarioArena:
             pygame.draw.ellipse(self.sky_surf, (132, 226, 132), (hx - 24, hy - hh + 42, 18, 28))
             pygame.draw.ellipse(self.sky_surf, (132, 226, 132), (hx + 16, hy - hh + 62, 16, 24))
 
-        # Krzaczki przy linii ziemi
+        # Krzaczki, drewniany płotek i kolorowe kwiatuszki przy linii ziemi
         ground_y = (MAP_ROWS - 2) * TILE_SIZE
+
+        # Zamek Chomików w stylu Mario na dalekim wzgórzu!
+        castle_x, castle_y = 660, ground_y - 175
+        pygame.draw.rect(self.sky_surf, (232, 218, 198), (castle_x - 42, castle_y - 54, 84, 72))
+        pygame.draw.rect(self.sky_surf, (188, 168, 145), (castle_x - 42, castle_y - 54, 84, 72), 2)
+        # Dwie boczne wieżyczki + środkowa wysoka wieża
+        for tx, tw, th in ((castle_x - 52, 24, 78), (castle_x + 28, 24, 78), (castle_x - 16, 32, 102)):
+            pygame.draw.rect(self.sky_surf, (238, 226, 206), (tx, castle_y + 18 - th, tw, th))
+            pygame.draw.rect(self.sky_surf, (182, 162, 140), (tx, castle_y + 18 - th, tw, th), 2)
+            # Czerwony spiczasty dach Mario
+            roof = [(tx - 4, castle_y + 18 - th), (tx + tw + 4, castle_y + 18 - th), (tx + tw // 2, castle_y - 8 - th)]
+            pygame.draw.polygon(self.sky_surf, (218, 62, 68), roof)
+            pygame.draw.polygon(self.sky_surf, (152, 32, 38), roof, 2)
+            # Złota chorągiewka na czubku
+            pygame.draw.line(self.sky_surf, (120, 82, 42), (tx + tw // 2, castle_y - 8 - th), (tx + tw // 2, castle_y - 22 - th), 2)
+            pygame.draw.polygon(self.sky_surf, GOLD, [(tx + tw // 2, castle_y - 22 - th), (tx + tw // 2 + 12, castle_y - 18 - th), (tx + tw // 2, castle_y - 14 - th)])
+        # Brama zamku
+        pygame.draw.ellipse(self.sky_surf, (92, 62, 44), (castle_x - 13, castle_y - 16, 26, 36))
+        pygame.draw.rect(self.sky_surf, (92, 62, 44), (castle_x - 13, castle_y, 26, 18))
+
+        # Drewniany płotek w tle
+        for fx in range(420, 560, 22):
+            pygame.draw.rect(self.sky_surf, (198, 150, 96), (fx, ground_y - 24, 10, 24), border_radius=2)
+            pygame.draw.rect(self.sky_surf, (142, 98, 56), (fx, ground_y - 24, 10, 24), 1, border_radius=2)
+        pygame.draw.rect(self.sky_surf, (186, 138, 86), (416, ground_y - 17, 152, 5))
+        pygame.draw.rect(self.sky_surf, (186, 138, 86), (416, ground_y - 8, 152, 5))
+
         for bx in (180, 440, 740, 960, 1220, 1410):
             pygame.draw.circle(self.sky_surf, (52, 162, 68), (bx - 18, ground_y - 4), 18)
             pygame.draw.circle(self.sky_surf, (66, 188, 82), (bx, ground_y - 12), 24)
             pygame.draw.circle(self.sky_surf, (52, 162, 68), (bx + 20, ground_y - 4), 18)
+            # Drobne kwiatuszki na krzaczkach
+            pygame.draw.circle(self.sky_surf, (255, 240, 110), (bx - 8, ground_y - 12), 3)
+            pygame.draw.circle(self.sky_surf, (255, 165, 195), (bx + 9, ground_y - 7), 3)
 
     def update(self, dt: float):
         for qb in self.question_blocks:
             qb.update(dt)
-        # Delikatnie płynące chmurki po niebie
         for cl in self.clouds:
             cl["x"] += cl["speed"] * dt
             if cl["x"] > WORLD_W + 90:
                 cl["x"] = -90.0
+        for m in self.ambient_motes:
+            m["x"] += m["vx"] * dt
+            m["phase"] += dt * 1.8
+            if m["x"] < 50:
+                m["x"] = WORLD_W - 50
+            elif m["x"] > WORLD_W - 50:
+                m["x"] = 50
 
     def point_hits_solid(self, x: float, y: float) -> bool:
         if x < TILE_SIZE or x > WORLD_W - TILE_SIZE or y < TILE_SIZE or y > WORLD_H - TILE_SIZE * 2:
@@ -305,8 +353,22 @@ class MarioArena:
         pygame.draw.circle(surf, (132, 82, 38), (hx - 2, hy - 2), max(2, int(3 * scale)))
 
     def draw(self, surf: pygame.Surface, cam_x: float, cam_y: float, elapsed: float, q_font: pygame.font.Font):
-        # 1. Tło nieba, słońca i wzgórz
+        # 1. Tło nieba, słońca, zamku i wzgórz
         surf.blit(self.sky_surf, (-int(cam_x), -int(cam_y)))
+
+        # 1a. Obracające się delikatne promienie słońca (god rays)
+        sun_sx = int(1360 - cam_x)
+        sun_sy = int(130 - cam_y)
+        if -260 <= sun_sx <= surf.get_width() + 260:
+            ray_surf = pygame.Surface((surf.get_width(), surf.get_height()), pygame.SRCALPHA)
+            for i in range(6):
+                a1 = elapsed * 0.14 + i * (math.pi / 3.0)
+                a2 = a1 + 0.16
+                p1 = (sun_sx, sun_sy)
+                p2 = (sun_sx + int(math.cos(a1) * 520), sun_sy + int(math.sin(a1) * 520))
+                p3 = (sun_sx + int(math.cos(a2) * 520), sun_sy + int(math.sin(a2) * 520))
+                pygame.draw.polygon(ray_surf, (255, 248, 185, 22), (p1, p2, p3))
+            surf.blit(ray_surf, (0, 0))
 
         # 1b. Płynące puszyste chmurki z delikatnym cieniem
         for cl in self.clouds:
@@ -336,15 +398,20 @@ class MarioArena:
             dx, dy = r.x - int(cam_x), r.y - int(cam_y)
             surf.blit(self.tex_grass if r.y == top_floor_y else self.tex_ground, (dx, dy))
 
-        # 3. Ceglane platformy Mario + miękki cień pod spodem
+        # 3. Ceglane platformy Mario + miękki cień pod spodem + delikatna trawka na wierzchu
         for r in self.brick_rects:
             if not view.colliderect(r):
                 continue
             dx, dy = r.x - int(cam_x), r.y - int(cam_y)
             surf.blit(self.shadow_strip, (dx + 3, dy + TILE_SIZE))
             surf.blit(self.tex_brick, (dx, dy))
+            row_above = (r.y // TILE_SIZE) - 1
+            col = r.x // TILE_SIZE
+            if row_above >= 0 and LEVEL_LAYOUT[row_above][col] not in ("#", "B", "?", "P"):
+                pygame.draw.rect(surf, (78, 198, 76), (dx + 2, dy, TILE_SIZE - 4, 4), border_radius=2)
+                pygame.draw.rect(surf, (132, 236, 118), (dx + 4, dy, TILE_SIZE - 8, 2))
 
-        # 4. Zielone rury Mario z cylindrycznym połyskiem
+        # 4. Zielone rury Mario z cylindrycznym połyskiem i ciemnym wlotem
         for r in self.pipe_rects:
             if not view.colliderect(r):
                 continue
@@ -358,10 +425,12 @@ class MarioArena:
                 pygame.draw.rect(surf, (148, 248, 148), (rim.x + 12, rim.y + 2, 8, rim.h - 4))
                 pygame.draw.rect(surf, (22, 110, 36), (rim.right - 10, rim.y + 2, 8, rim.h - 4))
                 pygame.draw.rect(surf, (14, 72, 24), rim, 2, border_radius=3)
+                pygame.draw.line(surf, (10, 48, 18), (dx + 4, dy + 2), (dx + r.w - 4, dy + 2), 2)
                 pygame.draw.line(surf, (16, 78, 26), (dx, dy + 14), (dx + r.w, dy + 14), 3)
 
-        # 5. Złote bloki ze znakiem zapytania '?' (z połyskiem i 4 nitami w rogach!)
+        # 5. Złote bloki ze znakiem zapytania '?' (z połyskiem, przesuwającym się blikiem i 4 nitami!)
         pulse = int(math.sin(elapsed * 5.5) * 14)
+        gleam_pos = (elapsed * 38.0) % 72.0
         for qb in self.question_blocks:
             if not view.colliderect(qb.rect):
                 continue
@@ -372,13 +441,14 @@ class MarioArena:
             if qb.active:
                 col = (min(255, 245 + pulse), min(255, 192 + pulse), 36)
                 pygame.draw.rect(surf, col, dr, border_radius=5)
-                # Jasny górny połysk
                 pygame.draw.rect(surf, (255, 242, 150), (dr.x + 3, dr.y + 3, dr.w - 6, 7), border_radius=3)
-                # 4 małe nity w rogach jak w Mario!
+                # Przesuwający się ukośny błysk światła po bloku '?'
+                if gleam_pos < 36.0:
+                    gx = int(gleam_pos)
+                    pygame.draw.line(surf, (255, 255, 225), (dr.x + gx, dr.y + 4), (dr.x + max(4, gx - 8), dr.bottom - 5), 3)
                 for nx, ny in ((dr.x + 6, dr.y + 6), (dr.right - 7, dr.y + 6), (dr.x + 6, dr.bottom - 7), (dr.right - 7, dr.bottom - 7)):
                     pygame.draw.circle(surf, (152, 92, 14), (nx, ny), 2)
                 pygame.draw.rect(surf, (148, 88, 12), dr, 3, border_radius=5)
-                # Znak '?' z cieniem 3D
                 q_sh = q_font.render("?", True, (130, 68, 8))
                 q_fg = q_font.render("?", True, (255, 250, 225))
                 qx = dr.centerx - q_fg.get_width() // 2
@@ -404,3 +474,10 @@ class MarioArena:
             pygame.draw.circle(surf, (255, 255, 255), (cap.centerx, cap.y + 5), 3)
             pygame.draw.circle(surf, (255, 255, 255), (cap.right - 11, cap.y + 7), 3)
             pygame.draw.ellipse(surf, (132, 18, 24), cap, 2)
+
+        # 7. Złote pyłki słonecznika dryfujące po całej arenie
+        for m in self.ambient_motes:
+            mx = int(m["x"] - cam_x)
+            my = int(m["y"] + math.sin(m["phase"]) * 8.0 - cam_y)
+            if 0 <= mx <= surf.get_width() and 0 <= my <= surf.get_height():
+                pygame.draw.circle(surf, m["col"], (mx, my), m["r"])

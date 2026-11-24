@@ -22,6 +22,7 @@ from settings import (
     SEED_SPAWN_INTERVAL,
     COMBAT_BOT_PRESETS,
     WEAPON_ORDER,
+    WEAPONS,
     SKIN_ORDER,
     POWERUP_TYPES,
     QUESTS,
@@ -987,7 +988,15 @@ class HamsterGame:
                     self.sounds.enabled,
                     self.difficulty_id,
                 )
-            draw_crosshair(surf, pygame.mouse.get_pos(), self.player.weapon_id)
+            # Czerwony błysk na brzegach ekranu, gdy gracz otrzyma obrażenia
+            if self.player.hurt_flash > 0:
+                dmg_v = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                alpha = int(115 * (self.player.hurt_flash / 0.14))
+                pygame.draw.rect(dmg_v, (235, 35, 45, alpha), (0, 0, SCREEN_W, SCREEN_H), 18)
+                surf.blit(dmg_v, (0, 0))
+            max_cd = max(0.05, WEAPONS[self.player.weapon_id]["cooldown"])
+            cd_ratio = min(1.0, self.player.shoot_cooldown / max_cd)
+            draw_crosshair(surf, pygame.mouse.get_pos(), self.player.weapon_id, cooldown_ratio=cd_ratio)
         elif self.state == "shop":
             self.shop.draw(surf, self.player)
         elif self.state == "dialogue" and self.active_npc is not None:

@@ -459,7 +459,19 @@
   let spWon = false;
   let bullets = [];
   let particles = [];
+  let rings = [];
+  let flashes = [];
+  let shells = [];
+  let damageFlash = 0;
   let notices = [];
+  const ambientMotes = Array.from({ length: 26 }, () => ({
+    x: 80 + Math.random() * (WORLD_W - 160),
+    y: 90 + Math.random() * (WORLD_H - 200),
+    vx: (Math.random() * 28) - 14,
+    phase: Math.random() * 6.28,
+    r: Math.random() < 0.7 ? 2 : 3,
+    col: ["#fff5a0", "#ffffe6", "#ffd75a"][Math.floor(Math.random() * 3)],
+  }));
   let keys = {};
   let mouseX = SCREEN_W / 2, mouseY = SCREEN_H / 2, mouseDown = false;
 
@@ -501,7 +513,7 @@
     me.total_seeds = 0;
     me.kills = 0;
     me.speedTimer = 0; me.shieldTimer = 0; me.damageTimer = 0;
-    bullets = []; particles = []; notices = [];
+    bullets = []; particles = []; rings = []; flashes = []; shells = []; damageFlash = 0; notices = [];
     writeLocalSave();
   }
 
@@ -644,8 +656,8 @@
     }
   };
 
-  // --- Rysowanie WSZYSTKICH 22 skórek chomików z naprawionymi czapkami! ---
-  function drawHamsterAvatar(g, cx, cy, skinId, facingRight, aim, scale = 1.0) {
+  // --- Rysowanie WSZYSTKICH 50 skórek chomików z ogonkiem, cieniowaniem, uśmiechem i animowanymi łapkami! ---
+  function drawHamsterAvatar(g, cx, cy, skinId, facingRight, aim, scale = 1.0, walkPhase = 0) {
     const skin = SKINS[skinId] || SKINS.klasyczny;
     const d = facingRight ? 1 : -1;
     const r = 17 * scale;
@@ -653,6 +665,10 @@
     const s = (v) => v * scale;
 
     g.save();
+    // Uroczy puszysty ogonek chomika z tyłu!
+    const tailBob = Math.sin(walkPhase * 2) * s(2);
+    g.fillStyle = skin.belly; g.strokeStyle = "#281e19"; g.lineWidth = s(1.1);
+    g.beginPath(); g.arc(cx - d * s(16), cy + s(8) + tailBob, s(4.5), 0, Math.PI * 2); g.fill(); g.stroke();
     // Peleryny za plecami (Król, Wampir, Super-Chomik)
     if (skinId === "krol" || skinId === "wampir" || skinId === "superbohater") {
       g.fillStyle = skinId === "wampir" ? "#281630" : skin.accent;
@@ -823,10 +839,16 @@
       for (const sx of [-5, -1, 3]) { g.beginPath(); g.moveTo(cx + s(sx), cy - s(13)); g.lineTo(cx + s(sx), cy - s(8)); g.stroke(); }
     }
 
-    // Łapki
-    g.fillStyle = skin.ear;
-    g.beginPath(); g.ellipse(cx - s(7), cy + s(15), s(4.2), s(2.5), 0, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.ellipse(cx + s(7), cy + s(15), s(4.2), s(2.5), 0, 0, Math.PI * 2); g.fill();
+    // Uroczy uśmiech + chomiczy ząbek i animowane łapki
+    if (!["wampir", "rekin", "zombie", "robot", "cyber"].includes(skinId)) {
+      g.strokeStyle = "#41261e"; g.lineWidth = s(1.3);
+      g.beginPath(); g.arc(cx + d * s(1), cy + s(3), s(3.2), 0.15, Math.PI - 0.15); g.stroke();
+      g.fillStyle = "#fff"; g.fillRect(cx + d * s(1.5), cy + s(4), s(2.8), s(2.8));
+    }
+    const pawSwing = Math.sin(walkPhase) * s(4.2);
+    g.fillStyle = skin.ear; g.strokeStyle = "#281e19"; g.lineWidth = s(1);
+    g.beginPath(); g.ellipse(cx - s(7) + pawSwing, cy + s(15), s(4.4), s(2.6), 0, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.beginPath(); g.ellipse(cx + s(7) - pawSwing, cy + s(15), s(4.4), s(2.6), 0, 0, Math.PI * 2); g.fill(); g.stroke();
 
     // --- CZAPKI I DODATKI (idealnie dopasowane do czubka głowy topY!) ---
     if (skinId === "ninja") {
@@ -1177,6 +1199,7 @@
     } else if (ent.jumpsLeft > 0) {
       ent.vy = -DJUMP * mult; ent.jumpsLeft -= 1;
       if (isPlayer) beep(440, 880, 0.14, "triangle", 0.08);
+      rings.push({ x: ent.x, y: ent.y + 16, col: "#f0f8ff", maxR: 30, life: 0.25, max: 0.25, lw: 3 });
       spawnBurst(ent.x, ent.y + 16, "#fff", 9);
     }
   }
@@ -1209,6 +1232,7 @@
       if (ent.x + 16 > sp.x && ent.x - 16 < sp.x + sp.w && ent.y + 17 > sp.y && ent.y - 17 < sp.y + sp.h && ent.vy >= -40) {
         ent.vy = -SPRING_JUMP; ent.onGround = false; ent.jumpsLeft = 1;
         if (isPlayer) beep(220, 920, 0.22, "square", 0.08);
+        rings.push({ x: sp.x + sp.w / 2, y: sp.y, col: "#ff7075", maxR: 36, life: 0.28, max: 0.28, lw: 3 });
         spawnBurst(sp.x + sp.w / 2, sp.y, "#ff8787", 10);
       }
     }
@@ -1246,12 +1270,14 @@
     if (!me.alive || me.invuln > 0) return;
     if (me.shieldTimer > 0) dmg = Math.max(2, Math.floor(dmg * 0.3));
     me.hp -= dmg;
+    damageFlash = 0.22;
     spawnBurst(me.x, me.y, "#ff5555", 6);
     beep(220, 90, 0.09, "square", 0.08);
     if (me.hp <= 0) {
       me.hp = 0; me.alive = false; me.respawnTimer = 2.6;
       me.seeds = Math.max(0, me.seeds - 3);
       writeLocalSave();
+      rings.push({ x: me.x, y: me.y, col: "#ffd43b", maxR: 54, life: 0.35, max: 0.35, lw: 4 });
       spawnBurst(me.x, me.y, "#ffd43b", 18);
       addNotice(`Pokonał Cię ${attackerName}! Odradzanie...`, "#ff6b6b");
       if (gameMode === "multi" && ws && ws.readyState === 1) {
@@ -1270,9 +1296,19 @@
       bullets.push({
         x, y, vx: Math.cos(a) * w.speed, vy: Math.sin(a) * w.speed,
         dmg: Math.round(w.dmg * damageMult), color: w.color, wid,
-        ownerId, ownerName, life: wid === "shotgun" ? 0.55 : 1.5,
+        ownerId, ownerName, life: wid === "shotgun" ? 0.55 : 1.5, trail: [[x, y]],
       });
     }
+    // Błysk z lufy + wyrzucana łuska!
+    flashes.push({ x, y, angle, col: w.color, size: wid === "awp" ? 18 : (wid === "shotgun" ? 16 : 11), life: 0.075, max: 0.075 });
+    const dirBack = Math.cos(angle) >= 0 ? -1 : 1;
+    shells.push({
+      x: x - Math.cos(angle) * 14, y: y - Math.sin(angle) * 14,
+      vx: dirBack * (60 + Math.random() * 70), vy: -(110 + Math.random() * 80),
+      ang: Math.random() * 6.28, spin: (Math.random() * 26) - 13,
+      col: wid === "shotgun" ? "#e14137" : (wid === "ziarna" ? "#f0e1be" : "#ebc85f"),
+      life: 0.7,
+    });
     spawnBurst(x, y, w.color, 4);
     if (sendNet && gameMode === "multi" && ws && ws.readyState === 1) {
       ws.send(JSON.stringify({ type: "shoot", x: Math.round(x), y: Math.round(y), angle: Number(angle.toFixed(3)), weapon_id: wid, damage_mult: damageMult }));
@@ -1434,9 +1470,14 @@
       }
     }
 
-    // Pociski
+    // Pociski ze smugami
     for (const b of bullets) {
       b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+      if (b.trail) {
+        b.trail.push([b.x, b.y]);
+        const maxT = b.wid === "awp" ? 10 : 5;
+        if (b.trail.length > maxT) b.trail.shift();
+      }
       if (b.life <= 0 || pointHitsSolid(b.x, b.y)) {
         b.dead = true; spawnBurst(b.x, b.y, b.color, 3); continue;
       }
@@ -1486,6 +1527,18 @@
 
     for (const pt of particles) { pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 300 * dt; pt.life -= dt; }
     particles = particles.filter(pt => pt.life > 0);
+    for (const rg of rings) rg.life -= dt;
+    rings = rings.filter(rg => rg.life > 0);
+    for (const fl of flashes) fl.life -= dt;
+    flashes = flashes.filter(fl => fl.life > 0);
+    for (const sh of shells) { sh.x += sh.vx * dt; sh.y += sh.vy * dt; sh.vy += 680 * dt; sh.ang += sh.spin * dt; sh.life -= dt; }
+    shells = shells.filter(sh => sh.life > 0);
+    if (damageFlash > 0) damageFlash = Math.max(0, damageFlash - dt);
+    for (const m of ambientMotes) {
+      m.x += m.vx * dt; m.phase += dt * 1.8;
+      if (m.x < 50) m.x = WORLD_W - 50;
+      else if (m.x > WORLD_W - 50) m.x = 50;
+    }
 
     const tx = Math.max(0, Math.min(WORLD_W - SCREEN_W, me.x - SCREEN_W / 2));
     const ty = Math.max(0, Math.min(WORLD_H - SCREEN_H, me.y - SCREEN_H / 2));
@@ -1560,13 +1613,15 @@
       ctx.beginPath(); ctx.ellipse(cx, cy + 17, 17, 4.5, 0, 0, Math.PI * 2); ctx.fill();
     }
 
-    drawHamsterAvatar(ctx, cx, cy, p.skin_id, facingRight, p.aim || 0, 1.0);
+    const walkPhase = (Math.abs(p.vx || 0) > 25 && p.onGround !== false) ? elapsed * 14 : 0;
+    const bob = walkPhase ? Math.abs(Math.sin(walkPhase)) * -3.2 : 0;
+    drawHamsterAvatar(ctx, cx, cy + bob, p.skin_id, facingRight, p.aim || 0, 1.0, walkPhase);
     // Delikatny górny blik 3D na futerku
     ctx.fillStyle = "rgba(255,255,255,0.16)";
-    ctx.beginPath(); ctx.ellipse(cx - 3, cy - 9, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx - 3, cy + bob - 9, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
 
     // Szczegółowa broń
-    drawDetailedWeapon(ctx, cx, cy, p.aim || 0, p.weapon_id || "ziarna");
+    drawDetailedWeapon(ctx, cx, cy + bob, p.aim || 0, p.weapon_id || "ziarna");
 
     if ((p.shield || p.shieldTimer || 0) > 0) {
       ctx.strokeStyle = "#5ad2ff"; ctx.lineWidth = 3;
@@ -1605,12 +1660,21 @@
     ctx.fillStyle = grad; ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
 
     const sunX = 1360 - camX * 0.5, sunY = 125 - camY * 0.3;
+    // Obracające się złote promienie słońca (god rays)
+    ctx.fillStyle = "rgba(255,248,185,0.09)";
+    for (let i = 0; i < 6; i++) {
+      const a1 = elapsed * 0.14 + i * (Math.PI / 3), a2 = a1 + 0.16;
+      ctx.beginPath(); ctx.moveTo(sunX, sunY);
+      ctx.lineTo(sunX + Math.cos(a1) * 520, sunY + Math.sin(a1) * 520);
+      ctx.lineTo(sunX + Math.cos(a2) * 520, sunY + Math.sin(a2) * 520);
+      ctx.closePath(); ctx.fill();
+    }
     ctx.fillStyle = "rgba(255,244,160,0.22)"; ctx.beginPath(); ctx.arc(sunX, sunY, 115, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "rgba(255,238,120,0.38)"; ctx.beginPath(); ctx.arc(sunX, sunY, 74, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "#ffec69"; ctx.beginPath(); ctx.arc(sunX, sunY, 44, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "#fffab4"; ctx.beginPath(); ctx.arc(sunX - 10, sunY - 10, 20, 0, Math.PI * 2); ctx.fill();
 
-    // 1b. Odległe góry (paralaksa) + wzgórza Mario z kropkami + krzaczki
+    // 1b. Odległe góry (paralaksa) + Zamek Chomików na wzgórzu + wzgórza Mario
     ctx.fillStyle = "#76c0a8";
     for (const [mx, mw, mh] of [[160, 280, 290], [540, 340, 340], [1020, 310, 310], [1440, 290, 280]]) {
       ctx.beginPath(); ctx.ellipse(mx - camX * 0.65, 800 - camY, mw, mh, 0, 0, Math.PI * 2); ctx.fill();
@@ -1623,6 +1687,17 @@
       ctx.beginPath(); ctx.ellipse(bx - 20, by - hh + 56, 9, 14, 0, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.ellipse(bx + 20, by - hh + 76, 8, 12, 0, 0, Math.PI * 2); ctx.fill();
     }
+    // Zamek w stylu Mario na dalekim wzgórzu!
+    const castleX = 660 - camX * 0.85, castleY = (MAP_ROWS - 2) * TILE - 175 - camY;
+    ctx.fillStyle = "#e8dac6"; ctx.strokeStyle = "#b6a28c"; ctx.lineWidth = 2;
+    ctx.fillRect(castleX - 42, castleY - 54, 84, 72); ctx.strokeRect(castleX - 42, castleY - 54, 84, 72);
+    for (const [tx, tw, th] of [[-52, 24, 78], [28, 24, 78], [-16, 32, 102]]) {
+      const rx = castleX + tx, ry = castleY + 18 - th;
+      ctx.fillStyle = "#eee2ce"; ctx.fillRect(rx, ry, tw, th); ctx.strokeRect(rx, ry, tw, th);
+      ctx.fillStyle = "#da3e44"; ctx.beginPath(); ctx.moveTo(rx - 4, ry); ctx.lineTo(rx + tw + 4, ry); ctx.lineTo(rx + tw / 2, ry - 26); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#ffd43b"; ctx.beginPath(); ctx.moveTo(rx + tw / 2, ry - 38); ctx.lineTo(rx + tw / 2 + 12, ry - 34); ctx.lineTo(rx + tw / 2, ry - 30); ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = "#5c3e2c"; ctx.beginPath(); ctx.ellipse(castleX, castleY, 13, 18, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(castleX - 13, castleY, 26, 18);
     // Płynące chmurki z cieniem
     for (const [cx0, cy0, sc, spd] of [[180, 145, 1.0, 14], [520, 110, 1.2, 10], [880, 175, 0.9, 16], [1240, 125, 1.15, 12], [1520, 215, 0.85, 18]]) {
       const cx = ((cx0 + elapsed * spd) % (WORLD_W + 180)) - 90 - camX * 0.75;
@@ -1736,13 +1811,56 @@
     }
     if (gameMode !== "menu") drawFighter(me, true);
 
+    // Pociski ze smugami, błyski, łuski, fale uderzeniowe i pyłki słonecznika!
+    for (const m of ambientMotes) {
+      const mx = m.x - camX, my = m.y + Math.sin(m.phase) * 8 - camY;
+      if (mx >= 0 && mx <= SCREEN_W && my >= 0 && my <= SCREEN_H) {
+        ctx.fillStyle = m.col; ctx.beginPath(); ctx.arc(mx, my, m.r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    for (const sh of shells) {
+      const sx = sh.x - camX, sy = sh.y - camY;
+      ctx.strokeStyle = sh.col; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(sx - Math.cos(sh.ang) * 3.5, sy - Math.sin(sh.ang) * 3.5); ctx.lineTo(sx + Math.cos(sh.ang) * 3.5, sy + Math.sin(sh.ang) * 3.5); ctx.stroke();
+    }
     for (const b of bullets) {
+      if (b.trail && b.trail.length >= 2) {
+        ctx.strokeStyle = b.wid === "awp" ? "#ffdc88" : b.color;
+        ctx.lineWidth = b.wid === "awp" ? 4 : 2.5;
+        ctx.beginPath();
+        b.trail.forEach(([tx, ty], idx) => idx === 0 ? ctx.moveTo(tx - camX, ty - camY) : ctx.lineTo(tx - camX, ty - camY));
+        ctx.stroke();
+      }
       ctx.fillStyle = b.color;
-      ctx.beginPath(); ctx.arc(b.x - camX, b.y - camY, b.wid === "awp" ? 5 : 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(b.x - camX, b.y - camY, b.wid === "awp" ? 6 : 4.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(b.x - camX, b.y - camY, 2.2, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const fl of flashes) {
+      const r = fl.size * (fl.life / fl.max), fx = fl.x - camX, fy = fl.y - camY;
+      ctx.fillStyle = fl.col; ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const a = fl.angle + i * (Math.PI / 4), rad = r * (i % 2 === 0 ? 1.45 : 0.45);
+        i === 0 ? ctx.moveTo(fx + Math.cos(a) * rad, fy + Math.sin(a) * rad) : ctx.lineTo(fx + Math.cos(a) * rad, fy + Math.sin(a) * rad);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(fx, fy, Math.max(2, r * 0.45), 0, Math.PI * 2); ctx.fill();
+    }
+    for (const rg of rings) {
+      const prog = 1 - (rg.life / rg.max), r = 6 + (rg.maxR - 6) * prog;
+      ctx.save(); ctx.globalAlpha = Math.max(0, 0.85 * (1 - prog));
+      ctx.strokeStyle = rg.col; ctx.lineWidth = Math.max(1, rg.lw * (1 - prog * 0.5));
+      ctx.beginPath(); ctx.arc(rg.x - camX, rg.y - camY, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
     }
     for (const pt of particles) {
       ctx.fillStyle = pt.color;
       ctx.beginPath(); ctx.arc(pt.x - camX, pt.y - camY, Math.max(1, pt.r * (pt.life / pt.max)), 0, Math.PI * 2); ctx.fill();
+    }
+    if (damageFlash > 0) {
+      ctx.strokeStyle = `rgba(235, 35, 45, ${(damageFlash / 0.22) * 0.55})`;
+      ctx.lineWidth = 22;
+      ctx.strokeRect(0, 0, SCREEN_W, SCREEN_H);
     }
 
     if (gameMode === "menu") return;
@@ -1788,9 +1906,10 @@
       ctx.strokeStyle = sel ? "#ffd43b" : (owned ? "#69db7c" : "#555");
       ctx.lineWidth = 2; ctx.strokeRect(rx, ry, slotW, 48);
       ctx.fillStyle = owned ? "#fff" : "#888"; ctx.font = "bold 14px Segoe UI"; ctx.textAlign = "left";
-      ctx.fillText(`[${w.key}] ${w.name.split(" ")[0]}`, rx + 10, ry + 20);
+      ctx.fillText(`[${w.key}] ${w.name.split(" ")[0]}`, rx + 8, ry + 19);
+      drawDetailedWeapon(ctx, rx + slotW - 44, ry + 26, -0.1, wid);
       ctx.fillStyle = sel ? "#69db7c" : (owned ? "#a5d8ff" : "#ffa94d"); ctx.font = "12px Segoe UI";
-      ctx.fillText(sel ? "Wybrana" : (owned ? "Gotowa" : `Sklep: ${w.cost} z.`), rx + 10, ry + 38);
+      ctx.fillText(sel ? "Wybrana" : (owned ? "Gotowa" : `${w.cost} z.`), rx + 8, ry + 39);
     });
   }
 
